@@ -1,20 +1,12 @@
 import streamlit as st
 import os
-from dotenv import load_dotenv, find_dotenv
 from openai import OpenAI
 
-# Try to find and load the .env file automatically
-env_path = find_dotenv()
-if env_path:
-    load_dotenv(env_path)
-else:
-    # .env not found, assume environment variables are set elsewhere (like deployment secrets)
-    pass
-
-API_KEY = os.getenv("OPENAI_API_KEY")
+# Get API key from Streamlit secrets or environment variable fallback
+API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
 
 if not API_KEY:
-    st.error("API key not found! Please set OPENAI_API_KEY in your environment or .env file.")
+    st.error("API key not found! Please add OPENAI_API_KEY in Streamlit Secrets or environment variables.")
     st.stop()
 
 BASE_URL = "https://models.github.ai/inference"
