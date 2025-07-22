@@ -36,9 +36,23 @@ if prompt := st.chat_input("What can I help you with?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
+        # Add system message defining personality
+        system_message = {
+            "role": "system",
+            "content": (
+                "You are an expert AP Physics C tutor. Your goal is to provide thorough and "
+                "detailed explanations for every question. Always prioritize clarity, depth, "
+                "and comprehensive coverage of all relevant concepts, including math derivations, "
+                "physical intuition, and problem-solving strategies. If asked about any AP Physics C topic, "
+                "explain it fully and clearly."
+            )
+        }
+
+        messages = [system_message] + st.session_state['messages']
+
         response_stream = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=st.session_state['messages'],
+            messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
             stream=True
