@@ -3,7 +3,7 @@ import os
 from openai import OpenAI
 
 # Get API key from Streamlit secrets or environment variable fallback
-API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+API_KEY = st.secrets.get("OPENAI_API_KEY")
 
 if not API_KEY:
     st.error("API key not found! Please add OPENAI_API_KEY in Streamlit Secrets or environment variables.")
