@@ -19,37 +19,43 @@ client = OpenAI(
 
 st.title('AP Physics C Tutor')
 
+# Initialize message history
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
 
+# Sidebar sliders
 st.sidebar.title('Model Parameters')
 temperature = st.sidebar.slider("Temperature", 0.0, 2.0, 0.7, 0.1)
 max_tokens = st.sidebar.slider('Max Tokens', 1, 4096, 256)
 
+# Display chat history
 for msg in st.session_state['messages']:
     with st.chat_message(msg['role']):
-        st.markdown(msg['content'])
+        st.markdown(msg['content'], unsafe_allow_html=True)  # Allow LaTeX rendering
 
+# Chat input
 if prompt := st.chat_input("What can I help you with?"):
     st.session_state['messages'].append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # Add system message defining personality
+        # Add system message to instruct AI on behavior
         system_message = {
             "role": "system",
             "content": (
                 "You are an expert AP Physics C tutor. Your goal is to provide thorough and "
-                "detailed explanations for every question. Always prioritize clarity, depth, "
-                "and comprehensive coverage of all relevant concepts, including math derivations, "
-                "physical intuition, and problem-solving strategies. If asked about any AP Physics C topic, "
-                "explain it fully and clearly."
+                "detailed explanations for every question. Always prioritize clarity, depth, and "
+                "comprehensive coverage of all relevant concepts, including math derivations, "
+                "physical intuition, and problem-solving strategies. Use LaTeX (enclosed in dollar signs, "
+                "e.g., $E=mc^2$ or $$\\int F \\, dx$$) whenever appropriate to clearly display equations."
             )
         }
 
+        # Include the system message at the start of the conversation
         messages = [system_message] + st.session_state['messages']
 
+        # Stream the response from the model
         response_stream = client.chat.completions.create(
             model=MODEL_NAME,
             messages=messages,
@@ -58,4 +64,8 @@ if prompt := st.chat_input("What can I help you with?"):
             stream=True
         )
         full_response = st.write_stream(response_stream)
+
+        # Render LaTeX in the assistant's message
+        st.markdown(full_response, unsafe_allow_html=True)
+
         st.session_state['messages'].append({"role": "assistant", "content": full_response})
