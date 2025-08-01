@@ -5,8 +5,18 @@ import svgwrite
 import streamlit.components.v1 as components
 
 # --- Load API key from Streamlit secrets ---
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-MODEL_NAME = "gpt-4"
+API_KEY = st.secrets.get("OPENAI_API_KEY")
+if not API_KEY:
+    st.error("API key not found! Please add OPENAI_API_KEY in Streamlit Secrets.")
+    st.stop()
+
+# Set your GitHub-hosted inference URL here
+BASE_URL = "https://models.github.ai/inference"
+
+# Initialize OpenAI client with custom base_url
+client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+
+MODEL_NAME = "gpt-4o-mini"
 
 # Sidebar controls
 st.sidebar.title("Model Parameters")
