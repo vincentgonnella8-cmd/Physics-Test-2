@@ -2,7 +2,6 @@ import streamlit as st
 import os
 from openai import OpenAI
 import svgwrite
-from io import StringIO
 
 # Get API key from Streamlit secrets or environment variable fallback
 API_KEY = st.secrets.get("OPENAI_API_KEY")
@@ -42,14 +41,30 @@ if prompt := st.chat_input("What can I help you with?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # System message for AI behavior
+        # System message instructing AI how to respond
         system_message = {
             "role": "system",
             "content": (
-                "You are an expert AP Physics C tutor. When asked to generate a problem, follow this format:\n\n"
-                "Question: <question>\nAnswer: <short answer>\nExplanation: <step-by-step explanation>\n"
-                "SVG_Code:\n```python\n<svgwrite-based draw_diagram() function>\n```"
-                "\nDo NOT explain the code. Just include it."
+                "You are an expert AP Physics C tutor. When asked to generate a problem, "
+                "respond using the exact format below:\n\n"
+                "Question: <the physics question>\n"
+                "Answer: <final numeric or conceptual answer>\n"
+                "Explanation: <step-by-step detailed explanation>\n"
+                "SVG_Code:\n```python\n"
+                "import svgwrite\n\n"
+                "def draw_diagram():\n"
+                "    dwg = svgwrite.Drawing(size=(\"300px\", \"200px\"))\n"
+                "    # Define a red arrow marker for force arrows\n"
+                "    arrow = dwg.marker(id=\"arrow\", insert=(10,5), size=(10,10), orient=\"auto\")\n"
+                "    arrow.add(dwg.path(d=\"M 0 0 L 10 5 L 0 10 z\", fill=\"red\"))\n"
+                "    dwg.defs.add(arrow)\n\n"
+                "    # Draw shapes, lines, text, and use marker_end='url(#arrow)' for arrows\n"
+                "    # Example:\n"
+                "    # dwg.add(dwg.line(start=(80, 100), end=(100, 100), stroke=\"red\", stroke_width=2, marker_end=\"url(#arrow)\"))\n\n"
+                "    # Return SVG string\n"
+                "    return dwg.tostring()\n"
+                "```\n"
+                "Do NOT include any extra text outside this format."
             )
         }
 
@@ -64,15 +79,15 @@ if prompt := st.chat_input("What can I help you with?"):
 
         full_response = response.choices[0].message.content
 
+        # Process the response
         if "SVG_Code:" in full_response and "```python" in full_response:
             try:
-                # Extract sections
                 question = full_response.split("Question:")[1].split("Answer:")[0].strip()
                 answer = full_response.split("Answer:")[1].split("Explanation:")[0].strip()
                 explanation = full_response.split("Explanation:")[1].split("SVG_Code:")[0].strip()
                 code_block = full_response.split("```python")[1].split("```")[0].strip()
 
-                # Run the code block securely
+                # Run the svgwrite code safely
                 local_vars = {}
                 exec(code_block, {"svgwrite": svgwrite}, local_vars)
 
@@ -84,13 +99,14 @@ if prompt := st.chat_input("What can I help you with?"):
                     st.markdown(f"**Answer:** {answer}")
                     st.markdown(f"**Explanation:** {explanation}")
 
-                    # Save response to session history
-                    st.session_state['messages'].append({"role": "assistant", "content": f"**Question:** {question}\n\n**Answer:** {answer}\n\n**Explanation:** {explanation}"})
+                    # Save cleaned assistant response in history (no code shown)
+                    clean_msg = f"**Question:** {question}\n\n**Answer:** {answer}\n\n**Explanation:** {explanation}"
+                    st.session_state['messages'].append({"role": "assistant", "content": clean_msg})
                 else:
-                    st.error("AI did not return a draw_diagram() function.")
+                    st.error("AI response did not include draw_diagram() function.")
             except Exception as e:
                 st.error(f"Diagram rendering error: {e}")
         else:
-            # Fallback: plain assistant reply
+            # If format unexpected, just show raw response
             st.markdown(full_response, unsafe_allow_html=True)
             st.session_state['messages'].append({"role": "assistant", "content": full_response})
