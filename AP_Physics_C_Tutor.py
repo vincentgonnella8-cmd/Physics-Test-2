@@ -1,17 +1,16 @@
 import streamlit as st
-from openai import OpenAI
 import re
+import requests
 
-# --- Load API key from Streamlit secrets ---
-API_KEY = st.secrets.get("OPENAI_API_KEY")
-if not API_KEY:
-    st.error("API key not found! Please add OPENAI_API_KEY in Streamlit Secrets.")
+# --- Load GitHub API key from Streamlit secrets ---
+GITHUB_KEY = st.secrets.get("GITHUB_KEY")
+if not GITHUB_KEY:
+    st.error("GitHub API key not found! Please add GITHUB_KEY in Streamlit Secrets.")
     st.stop()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=API_KEY)
+# Replace with your actual GitHub-hosted model inference URL
+API_URL = "https://models.github.ai/inference"
 
-# Use a valid model name for Chat Completions
 MODEL_NAME = "gpt-4o-mini"
 
 # Sidebar controls for tuning generation
@@ -35,6 +34,28 @@ def clean_code_block(code: str) -> str:
     if code.endswith("```"):
         code = "\n".join(code.splitlines()[:-1])
     return code.strip()
+
+def call_github_model_api(prompt_messages, temperature, max_tokens):
+    headers = {
+        "Authorization": f"Bearer {GITHUB_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": MODEL_NAME,
+        "messages": prompt_messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }
+
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        # Adjust this depending on your API response format
+        return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        st.error(f"API call failed: {e}")
+        return None
 
 def generate_question(topic: str) -> str | None:
     prompt = f"""
@@ -62,17 +83,7 @@ Do NOT include an explanation here.
         {"role": "user", "content": prompt}
     ]
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            temperature=temp_question,
-            max_tokens=max_tokens_question
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        st.error(f"OpenAI API call failed (generate_question): {e}")
-        return None
+    return call_github_model_api(messages, temperature=temp_question, max_tokens=max_tokens_question)
 
 def generate_svg(question_text: str) -> str | None:
     prompt = f"""
@@ -97,17 +108,7 @@ Question:
         {"role": "user", "content": prompt}
     ]
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            temperature=temp_svg,
-            max_tokens=max_tokens_svg
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        st.error(f"OpenAI API call failed (generate_svg): {e}")
-        return None
+    return call_github_model_api(messages, temperature=temp_svg, max_tokens=max_tokens_svg)
 
 def generate_explanation(question_text: str) -> str | None:
     prompt = f"""
@@ -127,17 +128,7 @@ Question:
         {"role": "user", "content": prompt}
     ]
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            temperature=temp_explanation,
-            max_tokens=max_tokens_explanation
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        st.error(f"OpenAI API call failed (generate_explanation): {e}")
-        return None
+    return call_github_model_api(messages, temperature=temp_explanation, max_tokens=max_tokens_explanation)
 
 def execute_svg_code(code: str) -> str | None:
     import svgwrite
