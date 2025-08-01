@@ -23,16 +23,20 @@ max_tokens_svg = st.sidebar.slider("SVG Max Tokens", 100, 1024, 512)
 
 st.title("AP Physics C Tutor — Question, Explanation & Diagram Generator")
 
-topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):", "Rotational Motion")
+topic = st.text_input(
+    "Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):",
+    "Rotational Motion"
+)
 
 def clean_code(code):
     code = code.strip()
     if code.startswith("```"):
-        # Remove markdown triple backticks and possible language specifier
         lines = code.split("\n")
+        # Remove opening ``` line
         if lines[0].startswith("```"):
             lines = lines[1:]
-        if lines[-1].startswith("```"):
+        # Remove closing ``` line
+        if lines and lines[-1].startswith("```"):
             lines = lines[:-1]
         code = "\n".join(lines)
     return code
@@ -73,7 +77,7 @@ $$ W = \\int \\vec{{F}} \\cdot d\\vec{{s}} $$
     return response.choices[0].message.content
 
 def generate_svg_code(question_text):
-    prompt = f"""
+    prompt = f'''
 You are a physics diagram expert who writes clean Python code using the svgwrite library.
 
 Based on the following AP Physics C free-response question, generate a Python function named draw_diagram() that creates an SVG diagram illustrating the problem setup or key concepts.
@@ -108,7 +112,7 @@ def draw_diagram():
     return dw.tostring()
 Free-response question:
 """{question_text}"""
-"""
+'''
     messages = [
         {"role": "system", "content": prompt},
         {"role": "user", "content": "Generate the SVG code function now."}
@@ -124,7 +128,7 @@ Free-response question:
 
 def execute_svg_code(code_block):
     code_block = clean_code(code_block)
-    # Fix marker_end if missing quotes (some LLMs output marker_end=arrow instead of marker_end="url(#arrow)")
+    # Fix marker_end if missing quotes (sometimes output is marker_end=arrow instead of marker_end="url(#arrow)")
     code_block_fixed = code_block.replace(
         'marker_end=arrow', 'marker_end="url(#arrow)"'
     ).replace(
