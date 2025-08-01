@@ -128,8 +128,6 @@ Requirements:
 - Output ONLY the Python function draw_diagram() (no markdown).
 - Canvas size: 400x300 px.
 - White background rectangle.
-- Red arrow marker with id 'arrow' used on at least one line.
-- Clear comments.
 - Strictly 2D elements only.
 - Return the SVG XML string via dw.tostring().
 
