@@ -3,6 +3,7 @@ import os
 from openai import OpenAI
 import svgwrite
 
+# Get API key from Streamlit secrets or environment variable fallback
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 
 if not API_KEY:
@@ -51,6 +52,8 @@ if prompt := st.chat_input("What can I help you with?"):
                 "import svgwrite\n\n"
                 "def draw_diagram():\n"
                 "    dwg = svgwrite.Drawing(size=(\"300px\", \"200px\"))\n"
+                "    # Add white background rectangle covering entire canvas\n"
+                "    dwg.add(dwg.rect(insert=(0,0), size=(\"100%\", \"100%\"), fill=\"white\"))\n\n"
                 "    # Define a red arrow marker for force arrows\n"
                 "    arrow = dwg.marker(id=\"arrow\", insert=(10,5), size=(10,10), orient=\"auto\")\n"
                 "    arrow.add(dwg.path(d=\"M 0 0 L 10 5 L 0 10 z\", fill=\"red\"))\n"
