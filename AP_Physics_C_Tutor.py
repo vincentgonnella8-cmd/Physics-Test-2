@@ -82,4 +82,47 @@ def execute_svg_code(code_block):
         st.error(f"Syntax error in SVG code: {e}")
         return None
     except Exception as e:
-        st.error(f"Error exec
+        st.error(f"Error executing SVG code: {e}")
+        return None
+    
+    if 'draw_diagram' in local_vars:
+        return local_vars['draw_diagram']()
+    else:
+        st.error("No draw_diagram() function found in SVG code.")
+        return None
+
+st.write("### Enter a physics topic or question prompt")
+
+user_input = st.text_area("Physics question prompt", height=100)
+
+if st.button("Generate Explanation and Diagram"):
+    if not user_input.strip():
+        st.warning("Please enter a prompt!")
+    else:
+        with st.spinner("Generating physics explanation..."):
+            explanation_response = generate_physics_explanation(user_input)
+        
+        st.markdown("### Generated Question, Answer, and Explanation")
+        st.markdown(explanation_response, unsafe_allow_html=True)
+        
+        question_match = re.search(r"Question:(.*)", explanation_response)
+        diagram_prompt = question_match.group(1).strip() if question_match else user_input
+
+        with st.spinner("Generating SVG diagram code..."):
+            svg_code_response = generate_svg_code(diagram_prompt)
+
+        if "def draw_diagram" in svg_code_response:
+            try:
+                code_start = svg_code_response.index("def draw_diagram")
+                code_block = svg_code_response[code_start:].strip()
+
+                svg_str = execute_svg_code(code_block)
+                if svg_str:
+                    st.image(svg_str)
+                    st.success("SVG Diagram rendered successfully!")
+                else:
+                    st.warning("SVG diagram could not be rendered due to errors.")
+            except Exception as e:
+                st.error(f"Error rendering SVG diagram: {e}")
+        else:
+            st.error("SVG code not found in the AI response.")
