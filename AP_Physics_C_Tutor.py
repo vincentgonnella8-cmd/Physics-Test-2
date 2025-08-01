@@ -213,6 +213,8 @@ Question:
 
 
 def execute_svg_code(code: str) -> str | None:
+    import svgwrite
+
     code = clean_code_block(code)
     # Fix marker_end syntax if assigned directly to marker object
     code = code.replace("marker_end=arrow", 'marker_end="url(#arrow)"')
@@ -270,26 +272,28 @@ if st.button("Generate Question, Diagram & Explanation"):
     scale_factor = 0.7  # Adjust scale here as needed
 
     if svg_str:
-        st.subheader("Diagram")
+    st.subheader("Diagram")
 
-        # Wrap the SVG in a div applying CSS scale transform
-        scaled_html = f"""
-        <div style="
-            border: 1px solid #ccc;
-            max-width: 420px;
-            overflow: visible;
-            transform: scale({scale_factor});
-            transform-origin: top left;
-            margin-bottom: {int(320 * (1 - scale_factor))}px;
-        ">
+    # Scale factor (e.g., 0.5 = 50%, 0.75 = 75%)
+    scale_factor = 0.6
+
+    # Embed SVG in a scaled HTML container
+    st.components.v1.html(
+        f"""
+        <div style="transform: scale({scale_factor}); 
+                    transform-origin: top left; 
+                    width: {800 * scale_factor}px; 
+                    height: {600 * scale_factor}px; 
+                    border: 1px solid #ccc; 
+                    overflow: hidden;">
             {svg_str}
         </div>
-        """
-
-        st.components.v1.html(scaled_html, height=int(320 * scale_factor * 1.2))
-    else:
-        st.warning("SVG diagram could not be rendered due to errors.")
-        st.stop()
+        """,
+        height=int(600 * scale_factor + 20),
+    )
+else:
+    st.warning("SVG diagram could not be rendered due to errors.")
+    st.stop()
 
     with st.spinner("Generating detailed explanation..."):
         explanation = generate_explanation(raw_question)
