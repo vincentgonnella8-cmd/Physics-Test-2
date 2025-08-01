@@ -50,7 +50,7 @@ Describe diagrams in strict SVG structure, no physics in diagram descriptions.
    - Coordinates start at the top left of (0,0)
    - Use <polygon> for ramps, always making a RIGHT triangle for inclines
    - Circles are drawn by specifying the center coordinate (x, y) and the radius.
-   - If a circle is on a ramp, align the BOTTOM EDGE of the circle to the ramp; If the center of the circle is on the ramp, move it down by one radius of the circle
+   - When deciding where to put a circle on a ramp, use the pythagorean theorem to check if the center position would form a similar triangle, if it does, move the circle up by one radius
    - ALL ramps and inclines will go UP and RIGHT; normal force is (very often) PERPENDICULAR to the ground
    - Lines are drawn between two points specified by their start and end coordinates.
    - Arrows are lines with a direction indicated by start and end points.
@@ -58,7 +58,6 @@ Describe diagrams in strict SVG structure, no physics in diagram descriptions.
    - All shapes should be outlines only.
    - Assume a white background canvas of 800x600 pixels is already provided.
    - Avoid using language from the question text.
-   - List each diagram element as a bullet point with coordinates and sizes.
 
     THE FOLLOWING IS AN EXAMPLE OF FORMATTING THE DIAGRAM DESCRIPTION, REFER TO THIS IF THE FORMATTING IS OFF [
         1. Use a <polygon> to draw a right triangle:
