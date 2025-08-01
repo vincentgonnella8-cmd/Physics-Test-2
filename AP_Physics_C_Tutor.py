@@ -31,9 +31,9 @@ topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy C
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
     prompt = f'''
 You are an AP Physics C expert.
-Always express math using LaTeX syntax: inline math with \\( ... \\),
+Always express math using LaTeX syntax: inline math with $ ... $,
 block math with $$ ... $$ for standalone equations. 
-Avoid plaintext math (e.g., never 'F = ma', always use \\( F = ma \\)). 
+Avoid plaintext math (e.g., never 'F = ma', always use $ F = ma $. 
 Describe diagrams in strict SVG structure, no physics in diagram descriptions.
 
 1. Generate ONE original multiple-choice physics question on the topic "{topic}".
