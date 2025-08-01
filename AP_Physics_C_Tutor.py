@@ -51,6 +51,7 @@ Describe diagrams in strict SVG structure, no physics in diagram descriptions.
    - Use <polygon> for ramps, always making a RIGHT triangle for inclines
    - Circles are drawn by specifying the center coordinate (x, y) and the radius.
    - When deciding where to put a circle on a ramp, use the pythagorean theorem to check if the center position would form a similar triangle, if it does, move the circle up by one radius
+   - VERY IMPORTANT, EXPLAIN EXACTLY WHY THE CENTER OF THE CIRCLE IS WHERE IT IS
    - ALL ramps and inclines will go UP and RIGHT; normal force is (very often) PERPENDICULAR to the ground
    - Lines are drawn between two points specified by their start and end coordinates.
    - Arrows are lines with a direction indicated by start and end points.
