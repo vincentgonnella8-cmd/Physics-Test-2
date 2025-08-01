@@ -98,7 +98,13 @@ with tab2:
             "content": (
                 "You are an expert AP Physics C question generator. "
                 "Always match College Board's AP style. Use clear physics language, proper math notation "
-                "with LaTeX ($...$ or $$...$$), and pedagogically sound structure."
+                "Use LaTeX (enclosed in dollar signs, e.g., $E=mc^2$ or $$\\int F \\, dx$$) whenever appropriate."
+                "When making an answer to the question you create, make sure to provide thorough and "
+                "detailed explanations for every question. ALWAYS try to use similar problem "
+                "solving as college board's AP classroom, and if a student asks to generate a "
+                "question, refer to the college board document to help you create one. Always "
+                "prioritize clarity, depth, and comprehensive coverage of all relevant concepts, "
+                "including math derivations, physical intuition, and problem-solving strategies. "
             )
         }
 
@@ -156,3 +162,4 @@ with tab2:
         if st.session_state.show_answer and st.session_state.answer_part:
             st.markdown("### Answer / Explanation")
             st.markdown(st.session_state.answer_part, unsafe_allow_html=True)
+
