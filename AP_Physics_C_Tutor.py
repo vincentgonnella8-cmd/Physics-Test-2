@@ -1,7 +1,8 @@
 import streamlit as st
 import re
 from openai import OpenAI
-import svgwrite  # Moved import here since it's used below
+import svgwrite
+import streamlit.components.v1 as components
 
 # --- Load API key from Streamlit secrets ---
 API_KEY = st.secrets.get("OPENAI_API_KEY")
@@ -11,13 +12,10 @@ if not API_KEY:
 
 # Set your GitHub-hosted inference URL here
 BASE_URL = "https://models.github.ai/inference"
-
-# Initialize OpenAI client with custom base_url
 client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-
 MODEL_NAME = "gpt-4o-mini"
 
-# Sidebar controls for tuning generation
+# Sidebar controls
 st.sidebar.title("Model Parameters")
 temp_question = st.sidebar.slider("Question Temperature", 0.0, 1.0, 0.7, 0.1)
 max_tokens_question = st.sidebar.slider("Question Max Tokens", 200, 1200, 700, 10)
@@ -28,14 +26,9 @@ max_tokens_explanation = st.sidebar.slider("Explanation Max Tokens", 500, 2048, 
 
 st.title("AP Physics C Tutor — Question, Diagram & Explanation Generator")
 
-topic = st.text_input(
-    "Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):",
-    "Rotational Motion"
-)
-
+topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):", "Rotational Motion")
 
 def clean_code_block(code: str) -> str:
-    """Remove markdown fences if any."""
     code = code.strip()
     if code.startswith("```"):
         code = "\n".join(code.splitlines()[1:])
@@ -43,11 +36,9 @@ def clean_code_block(code: str) -> str:
         code = "\n".join(code.splitlines()[:-1])
     return code.strip()
 
-
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
     prompt = f'''
 You are an AP Physics C expert.
-
 1. Generate ONE original multiple-choice physics question on the topic "{topic}".
    Use clear LaTeX formatting for all formulas.
    Provide the question and answer choices only.
@@ -55,30 +46,11 @@ You are an AP Physics C expert.
 2. Next, create a detailed, precise diagram description intended for generating an SVG image.
 
    The SVG canvas size is fixed at 800 pixels wide by 600 pixels high.
-   All coordinates must fit within this 800x600 pixel canvas.
+   Use bullet points for each diagram element with coordinates.
 
-   Use the following SVG drawing conventions when writing the diagram description:
-   - Keep EVERYTHING visible in frame, if you cannot keep it within the 800x600 frame, the diagram description should be changed
-   - Circles are drawn by specifying the center coordinate (x, y) and the radius. The radius extends outward equally in all directions from the center.
-   - Lines are drawn between two points specified by their start and end coordinates.
-   - Arrows are lines with a direction indicated by start and end points, usually ending with a labeled arrowhead.
-   - Labels are placed at exact (x, y) coordinates and should be clearly associated with the relevant diagram element.
-   - All shapes should be outlines only; do NOT specify any fills.
-   - Assume a white background canvas of 800x600 pixels is already provided by the SVG template; do NOT mention or draw the background.
-   - Avoid using or referencing any language or phrases from the question text.
-   - List each diagram element as a bullet point with explicit coordinates and sizes.
-   - All coordinates start from the top left (0,0) would be at the very top left of the screen
-
-   Example bullet points:
-     * Draw a ramp line from (50, 250) to (350, 150).
-     * Draw a circle outline centered at (150, 200) with radius 40 pixels (no fill).
-     * Draw an arrow from (150, 200) down the ramp, length 50 pixels, labeled 'F_gravity'.
-     * Place label 'θ' near (70, 260).
-
-Format your response exactly as follows:
-
+Format:
 Question:
-[question text]
+[question]
 
 Answer Choices:
 A) ...
@@ -89,17 +61,11 @@ D) ...
 Correct Answer: [Letter]
 
 Diagram description:
-- [list diagram elements as bullet points with pixel coordinates]
-
-Do NOT include any SVG code or programming code.
-Do NOT reuse any text from the question in the diagram description.
-The diagram description should be clear and precise for an SVG renderer to follow.
+- Draw ...
+- Draw ...
 '''
     messages = [
-        {
-            "role": "system",
-            "content": "Generate rigorous AP Physics questions with LaTeX and precise SVG-style diagram descriptions with pixel coordinates.",
-        },
+        {"role": "system", "content": "Generate rigorous AP Physics questions with LaTeX and precise SVG-style diagram descriptions."},
         {"role": "user", "content": prompt},
     ]
     try:
@@ -107,60 +73,32 @@ The diagram description should be clear and precise for an SVG renderer to follo
             model=MODEL_NAME,
             messages=messages,
             temperature=temp_question,
-            max_tokens=max_tokens_question + 400,  # extra tokens for diagram desc
+            max_tokens=max_tokens_question + 400,
         )
         full_text = response.choices[0].message.content.strip()
-
-        # Parse question and diagram description
         parts = full_text.split("Diagram description:")
         question_text = parts[0].strip()
         diagram_desc = parts[1].strip() if len(parts) > 1 else ""
         return question_text, diagram_desc
     except Exception as e:
-        st.error(f"OpenAI API call failed (generate_question_and_diagram_desc): {e}")
+        st.error(f"OpenAI API call failed: {e}")
         return None, None
-
 
 def generate_svg(diagram_desc: str) -> str | None:
     tutorial = '''
 You are a Python SVG expert using the svgwrite library.
-
-Generate SVG diagrams based exactly on the provided detailed diagram description with pixel coordinates.
-
-Instructions:
-1. Use a canvas size of 800x600 pixels.
-2. Start with a white background rectangle covering the entire canvas.
-3. For each bullet point in the diagram description:
-   - Parse coordinates and shapes precisely.
-   - Draw lines, circles, rectangles, and arrows exactly at specified pixel positions.
-   - Use a red arrow marker with id 'arrow' for arrows.
-   - Label text exactly at the given coordinates.
-4. Do NOT add or change coordinates; follow the description exactly.
-5. Use clear Python code with comments.
-6. Return the SVG XML string with `return dw.tostring()`.
-7. Output ONLY the Python function `draw_diagram()`. No markdown, no extra text.
-
-Example snippet for an arrow line:
-```python
-arrow = dw.marker(insert=(10,5), size=(10,10), orient="auto", id="arrow")
-arrow.add(dw.path(d="M0,0 L10,5 L0,10 L2,5 Z", fill="red"))
-dw.defs.add(arrow)
-line = dw.line(start=(150, 200), end=(200, 150), stroke="black", stroke_width=2, marker_end="url(#arrow)")
-dw.add(line)
+Generate SVG diagrams based on a diagram description.
+- Canvas: 800x600
+- Add a white background rectangle
+- Use red arrow marker with id "arrow"
+- Return `dw.tostring()`
+- Output only the function draw_diagram()
 '''
-    prompt = f'''
-You are a physics diagram expert.
-
-{tutorial}
-
-Diagram description:
-"""{diagram_desc}"""
-'''
+    prompt = f"{tutorial}\nDiagram description:\n\"\"\"{diagram_desc}\"\"\""
     messages = [
-        {"role": "system", "content": "You generate clean, error-free Python SVG drawing functions."},
+        {"role": "system", "content": "Generate clean, error-free Python SVG drawing functions."},
         {"role": "user", "content": prompt},
     ]
-
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
@@ -170,36 +108,21 @@ Diagram description:
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        st.error(f"OpenAI API call failed (generate_svg): {e}")
+        st.error(f"OpenAI API call failed: {e}")
         return None
-
 
 def generate_explanation(question_text: str) -> str | None:
     prompt = f'''
 You are an excellent AP Physics C tutor.
-
-Instructions:
-
-Write a detailed, step-by-step explanation suitable for AP Physics C students.
-
-Use LaTeX formatting for all mathematical formulas and expressions.
-
-Refer explicitly to diagram elements like arrows and forces.
-
-Use clear physics terminology and explain concepts thoroughly.
-
-Format your explanation in readable paragraphs.
-
-Given the question below, write a very detailed and thorough explanation suitable for a top AP Classroom solution.
+Given this question, write a detailed explanation using LaTeX.
 
 Question:
-"""{question_text}"""
+\"\"\"{question_text}\"\"\"
 '''
     messages = [
-        {"role": "system", "content": "You provide clear, detailed AP Physics explanations with LaTeX."},
+        {"role": "system", "content": "Provide clear, detailed AP Physics explanations with LaTeX."},
         {"role": "user", "content": prompt},
     ]
-
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
@@ -209,98 +132,85 @@ Question:
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        st.error(f"OpenAI API call failed (generate_explanation): {e}")
+        st.error(f"OpenAI API call failed: {e}")
         return None
 
-
 def execute_svg_code(code: str) -> str | None:
-    import svgwrite
-
     code = clean_code_block(code)
-    # Fix marker_end syntax if assigned directly to marker object
     code = code.replace("marker_end=arrow", 'marker_end="url(#arrow)"')
-
     local_vars = {}
     try:
         exec(code, {"svgwrite": svgwrite}, local_vars)
-    except Exception as e:
-        st.error(f"Error executing SVG code: {e}")
-        return None
-
-    if "draw_diagram" not in local_vars:
-        st.error("draw_diagram() function not found in SVG code.")
-        return None
-
-    try:
+        if "draw_diagram" not in local_vars:
+            raise ValueError("draw_diagram() not found.")
         svg_str = local_vars["draw_diagram"]()
         return svg_str
     except Exception as e:
-        st.error(f"Error running draw_diagram(): {e}")
+        st.error(f"SVG execution error: {e}")
         return None
 
-
 if st.button("Generate Question, Diagram & Explanation"):
-
     if not topic.strip():
         st.warning("Please enter a physics topic!")
         st.stop()
 
-    with st.spinner("Generating AP Physics C question and diagram description..."):
+    with st.spinner("Generating question and diagram..."):
         raw_question, diagram_description = generate_question_and_diagram_desc(topic)
 
     if not raw_question or not diagram_description:
-        st.error("Failed to generate question or diagram description.")
+        st.error("Failed to generate content.")
         st.stop()
 
     st.markdown("### Generated Question")
-    st.markdown(raw_question, unsafe_allow_html=True)  # LaTeX enabled
+    st.markdown(raw_question, unsafe_allow_html=True)
 
-    st.markdown("### Diagram Description (for testing, can hide later)")
+    st.markdown("### Diagram Description (for testing)")
     st.text(diagram_description)
 
     with st.spinner("Generating SVG diagram..."):
         svg_code = generate_svg(diagram_description)
 
     if not svg_code:
-        st.warning("Failed to generate SVG code.")
+        st.warning("SVG generation failed.")
         st.stop()
 
-    st.subheader("Generated SVG Python Code")
+    st.subheader("Generated SVG Code")
     st.code(svg_code, language="python")
 
     svg_str = execute_svg_code(svg_code)
 
-    scale_factor = 0.7  # Adjust scale here as needed
-
     if svg_str:
         st.subheader("Diagram")
 
-        # Scale factor (e.g., 0.5 = 50%, 0.75 = 75%)
+        # SCALE SETTINGS
         scale_factor = 0.6
+        scaled_width = int(800 * scale_factor)
+        scaled_height = int(600 * scale_factor)
 
-        # Embed SVG in a scaled HTML container
-        st.components.v1.html(
+        components.html(
             f"""
-            <div style="transform: scale({scale_factor}); 
-                        transform-origin: top left; 
-                        width: {800 * scale_factor}px; 
-                        height: {600 * scale_factor}px; 
-                        border: 1px solid #ccc; 
-                        overflow: hidden;">
+            <div style="
+                width: {scaled_width}px;
+                height: {scaled_height}px;
+                overflow: hidden;
+                border: 1px solid #ccc;
+                transform: scale({scale_factor});
+                transform-origin: top left;
+            ">
                 {svg_str}
             </div>
             """,
-            height=int(600 * scale_factor + 20),
+            height=scaled_height + 30,
         )
     else:
-        st.warning("SVG diagram could not be rendered due to errors.")
+        st.warning("SVG rendering failed.")
         st.stop()
 
-    with st.spinner("Generating detailed explanation..."):
+    with st.spinner("Generating explanation..."):
         explanation = generate_explanation(raw_question)
 
     if explanation:
-        st.markdown("### Detailed Explanation")
-        st.markdown(explanation, unsafe_allow_html=True)  # LaTeX enabled
+        st.markdown("### Explanation")
+        st.markdown(explanation, unsafe_allow_html=True)
     else:
-        st.warning("Failed to generate explanation.")
+        st.warning("Explanation generation failed.")
