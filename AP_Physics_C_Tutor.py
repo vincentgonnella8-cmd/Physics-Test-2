@@ -48,9 +48,9 @@ Describe diagrams in strict SVG structure, no physics in diagram descriptions.
 
    Use the following SVG drawing conventions when writing the diagram description:
    - Coordinates start at the top left of (0,0)
-   - Use <polygon> for ramps
+   - Use <polygon> for ramps, always making a RIGHT triangle for inclines
    - Circles are drawn by specifying the center coordinate (x, y) and the radius.
-   - If a circle is on a ramp, align the EDGE of the circle to the ramp
+   - If a circle is on a ramp, align the BOTTOM EDGE of the circle to the ramp
    - ALL ramps and inclines will go UP and RIGHT; normal force is (very often) PERPENDICULAR to the ground
    - Lines are drawn between two points specified by their start and end coordinates.
    - Arrows are lines with a direction indicated by start and end points.
