@@ -79,8 +79,8 @@ You are an AP Physics C expert.
 
 2. Next, create a detailed, precise diagram description intended for generating an SVG image.
 
-   The SVG canvas size is fixed at 400 pixels wide by 300 pixels high.
-   All coordinates must fit within this 400x300 pixel canvas.
+   The SVG canvas size is fixed at 800 pixels wide by 600 pixels high.
+   All coordinates must fit within this 800x600 pixel canvas.
 
    Use the following SVG drawing conventions when writing the diagram description:
    - Circles are drawn by specifying the center coordinate (x, y) and the radius.
@@ -91,6 +91,33 @@ You are an AP Physics C expert.
    - Assume a white background canvas of 800x600 pixels is already provided.
    - Avoid using language from the question text.
    - List each diagram element as a bullet point with coordinates and sizes.
+
+    Example of how to format: [
+
+    1. Use a <polygon> to draw a right triangle:
+        * Base point: (50, 350)
+        * Top point of the incline: (150, 150)
+        * Right base: (550, 350)
+
+    2. Use a <circle> centered at (250, 200) with a radius of 40.
+
+    3. Use <line> elements with arrowheads:
+        * Gravity (F<sub>g</sub>)
+            - From (250, 200) to (250, 280) (straight down)
+            
+        * Push Component (F<sub>p</sub>)
+            - From (250, 200) to (310, 260) (diagonal down-right)
+            
+        * Pull Component (F - pull)
+            - From (250, 200) to (190, 240) (diagonal up-left)
+            
+        * Reaction Force (F<sub>r</sub>)
+            - From (250, 200) to (220, 110) (diagonal upward, perpendicular to incline)
+            
+        * Friction Force (F<sub>f</sub>)
+            - From (250, 200) to (330, 160) (up the slope)
+
+    
 
 Format:
 Question:
@@ -109,7 +136,16 @@ Diagram description:
 - Draw ...
 '''
     messages = [
-        {"role": "system", "content": "Generate rigorous AP Physics questions with LaTeX and precise SVG-style diagram descriptions."},
+        {
+            "role": "system",
+            "content": (
+                "You are an expert AP Physics C tutor. "
+                "Always express math using LaTeX syntax: inline math with \\( ... \\), "
+                "block math with $$ ... $$ for standalone equations. "
+                "Avoid plaintext math (e.g., never 'F = ma', always use \\( F = ma \\)). "
+                "Describe diagrams in strict SVG structure, no physics in diagram descriptions."
+            ),
+        },
         {"role": "user", "content": prompt},
     ]
     try:
@@ -149,7 +185,14 @@ Instructions:
 '''
     prompt = f"{tutorial}\nDiagram description:\n\"\"\"{diagram_desc}\"\"\""
     messages = [
-        {"role": "system", "content": "Generate clean, error-free Python SVG drawing functions."},
+        {
+            "role": "system",
+            "content": (
+                "You are a precise SVG drawing assistant. "
+                "Write clean, valid svgwrite Python code to match descriptions exactly. "
+                "Avoid any physics reasoning — focus only on shape positions and styles."
+            )
+        },
         {"role": "user", "content": prompt},
     ]
     try:
@@ -176,7 +219,15 @@ Question:
 """{question_text}"""
 '''
     messages = [
-        {"role": "system", "content": "Provide clear, detailed AP Physics explanations with LaTeX."},
+        {
+            "role": "system",
+            "content": (
+                "You are a master-level AP Physics tutor. "
+                "Always use LaTeX to express equations and units. "
+                "Use \\( ... \\) for inline math and $$ ... $$ for block math. "
+                "Avoid plaintext formatting like 'F = ma' — use \\( F = ma \\) instead."
+            ),
+        },
         {"role": "user", "content": prompt},
     ]
     try:
@@ -237,7 +288,7 @@ if st.button("Generate Question, Diagram & Explanation"):
 
     if svg_str:
         st.subheader("Diagram")
-        scale_factor = 0.6
+        scale_factor = 0.8
         scaled_width = int(800 * scale_factor)
         scaled_height = int(600 * scale_factor)
 
