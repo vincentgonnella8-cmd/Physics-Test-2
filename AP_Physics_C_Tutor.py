@@ -29,17 +29,12 @@ topic = st.text_input(
 )
 
 def clean_code(code):
-    code = code.strip()
-    if code.startswith("```"):
-        lines = code.split("\n")
-        # Remove opening ``` line
-        if lines[0].startswith("```"):
-            lines = lines[1:]
-        # Remove closing ``` line
-        if lines and lines[-1].startswith("```"):
-            lines = lines[:-1]
-        code = "\n".join(lines)
-    return code
+    lines = code.strip().splitlines()
+    if lines and lines[0].strip().startswith("```"):
+        lines = lines[1:]
+    if lines and lines[-1].strip().startswith("```"):
+        lines = lines[:-1]
+    return "\n".join(lines)
 
 def generate_question_and_explanation(topic):
     prompt = f"""
@@ -82,40 +77,23 @@ You are a physics diagram expert who writes clean Python code using the svgwrite
 
 Based on the following AP Physics C free-response question, generate a Python function named draw_diagram() that creates an SVG diagram illustrating the problem setup or key concepts.
 
-Requirements for draw_diagram():
-- Create an SVG canvas with size 400x300 pixels.
-- Add a white background rectangle that fills the entire canvas.
-- Define a red arrow marker with id 'arrow', size 10x10, oriented properly.
-- Use this arrow marker on lines via marker_end="url(#arrow)".
-- Add meaningful comments explaining each step of the SVG code.
-- Return the SVG markup as a string using dw.tostring().
-- Output only the function code block without any extra text or markdown.
+Requirements:
+- Output ONLY the function definition for draw_diagram().
+- DO NOT include any markdown (no ```python or backticks).
+- The function must:
+  - Create an SVG canvas 400x300 pixels
+  - Add a white background rectangle
+  - Define and use a red arrow marker with id 'arrow'
+  - Use that marker on at least one line
+  - Return the SVG XML string via dw.tostring()
+  - Include clear comments
 
-Example usage of svgwrite to create the arrow marker and background:
-
-```python
-import svgwrite
-
-def draw_diagram():
-    dw = svgwrite.Drawing(size=(400,300))
-    # White background
-    dw.add(dw.rect(insert=(0,0), size=('100%','100%'), fill='white'))
-
-    # Define red arrow marker
-    arrow_marker = dw.marker(id='arrow', insert=(10,5), size=(10,10), orient='auto')
-    arrow_marker.add(dw.path(d="M0,0 L10,5 L0,10 L2,5 Z", fill="red"))
-    dw.defs.add(arrow_marker)
-
-    # Use arrow marker in a line
-    dw.add(dw.line(start=(50,150), end=(350,150), stroke='black', stroke_width=2, marker_end='url(#arrow)'))
-
-    return dw.tostring()
-Free-response question:
+Here is the question to base the diagram on:
 """{question_text}"""
 '''
     messages = [
         {"role": "system", "content": prompt},
-        {"role": "user", "content": "Generate the SVG code function now."}
+        {"role": "user", "content": "Return only the clean draw_diagram() function code."}
     ]
 
     response = client.chat.completions.create(
@@ -128,12 +106,17 @@ Free-response question:
 
 def execute_svg_code(code_block):
     code_block = clean_code(code_block)
-    # Fix marker_end if missing quotes (sometimes output is marker_end=arrow instead of marker_end="url(#arrow)")
+
+    # Ensure arrow markers are correctly formatted
     code_block_fixed = code_block.replace(
         'marker_end=arrow', 'marker_end="url(#arrow)"'
-    ).replace(
-        'marker_end=arrow', 'marker_end="url(#arrow)"'
     )
+
+    # --- Diagnostic preview ---
+    st.subheader("Generated SVG Code (Python)")
+    st.code(code_block_fixed, language="python")
+
+    # Validate code first
     try:
         compile(code_block_fixed, "<string>", "exec")
     except SyntaxError as e:
@@ -155,7 +138,7 @@ def execute_svg_code(code_block):
             st.error(f"Error running draw_diagram(): {e}")
             return None
     else:
-        st.error("No draw_diagram() function found in SVG code.")
+        st.error("No draw_diagram() function found in the SVG code.")
         return None
 
 if st.button("Generate AP Physics C Question, Explanation & Diagram"):
@@ -164,10 +147,11 @@ if st.button("Generate AP Physics C Question, Explanation & Diagram"):
     else:
         with st.spinner("Generating question and explanation..."):
             full_explanation = generate_question_and_explanation(topic)
+
         st.markdown("### Generated AP Physics C Question & Explanation")
         st.markdown(full_explanation, unsafe_allow_html=True)
 
-        # Extract free-response question text for SVG generation
+        # Extract free-response question section for the diagram
         frq_start = full_explanation.lower().find("free-response question")
         frq_text = full_explanation[frq_start:] if frq_start != -1 else full_explanation
 
