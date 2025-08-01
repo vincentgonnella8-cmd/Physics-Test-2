@@ -1,15 +1,18 @@
 import streamlit as st
 import re
-import requests
+from openai import OpenAI
 
-# --- Load GitHub API key from Streamlit secrets ---
-GITHUB_KEY = st.secrets.get("GITHUB_KEY")
-if not GITHUB_KEY:
-    st.error("GitHub API key not found! Please add GITHUB_KEY in Streamlit Secrets.")
+# --- Load API key from Streamlit secrets ---
+API_KEY = st.secrets.get("OPENAI_API_KEY")
+if not API_KEY:
+    st.error("API key not found! Please add OPENAI_API_KEY in Streamlit Secrets.")
     st.stop()
 
-# Replace with your actual GitHub-hosted model inference URL
-API_URL = "https://models.github.ai/inference"
+# Set your GitHub-hosted inference URL here
+BASE_URL = "https://models.github.ai/inference"
+
+# Initialize OpenAI client with custom base_url
+client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 MODEL_NAME = "gpt-4o-mini"
 
@@ -34,28 +37,6 @@ def clean_code_block(code: str) -> str:
     if code.endswith("```"):
         code = "\n".join(code.splitlines()[:-1])
     return code.strip()
-
-def call_github_model_api(prompt_messages, temperature, max_tokens):
-    headers = {
-        "Authorization": f"Bearer {GITHUB_KEY}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": MODEL_NAME,
-        "messages": prompt_messages,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
-
-    try:
-        response = requests.post(API_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        # Adjust this depending on your API response format
-        return data["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        st.error(f"API call failed: {e}")
-        return None
 
 def generate_question(topic: str) -> str | None:
     prompt = f"""
@@ -83,7 +64,17 @@ Do NOT include an explanation here.
         {"role": "user", "content": prompt}
     ]
 
-    return call_github_model_api(messages, temperature=temp_question, max_tokens=max_tokens_question)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=messages,
+            temperature=temp_question,
+            max_tokens=max_tokens_question
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"OpenAI API call failed (generate_question): {e}")
+        return None
 
 def generate_svg(question_text: str) -> str | None:
     prompt = f"""
@@ -108,7 +99,17 @@ Question:
         {"role": "user", "content": prompt}
     ]
 
-    return call_github_model_api(messages, temperature=temp_svg, max_tokens=max_tokens_svg)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=messages,
+            temperature=temp_svg,
+            max_tokens=max_tokens_svg
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"OpenAI API call failed (generate_svg): {e}")
+        return None
 
 def generate_explanation(question_text: str) -> str | None:
     prompt = f"""
@@ -128,7 +129,17 @@ Question:
         {"role": "user", "content": prompt}
     ]
 
-    return call_github_model_api(messages, temperature=temp_explanation, max_tokens=max_tokens_explanation)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=messages,
+            temperature=temp_explanation,
+            max_tokens=max_tokens_explanation
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"OpenAI API call failed (generate_explanation): {e}")
+        return None
 
 def execute_svg_code(code: str) -> str | None:
     import svgwrite
