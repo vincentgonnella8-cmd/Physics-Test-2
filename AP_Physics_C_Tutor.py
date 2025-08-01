@@ -54,8 +54,8 @@ You are an AP Physics C expert.
 
 2. Next, create a detailed, precise diagram description intended for generating an SVG image.
 
-   The SVG canvas size is fixed at 400 pixels wide by 300 pixels high.
-   All coordinates must fit within this 400x300 pixel canvas.
+   The SVG canvas size is fixed at 800 pixels wide by 600 pixels high.
+   All coordinates must fit within this 800x600 pixel canvas.
 
    Use the following SVG drawing conventions when writing the diagram description:
    - Circles are drawn by specifying the center coordinate (x, y) and the radius. The radius extends outward equally in all directions from the center.
@@ -126,7 +126,7 @@ You are a Python SVG expert using the svgwrite library.
 Generate SVG diagrams based exactly on the provided detailed diagram description with pixel coordinates.
 
 Instructions:
-1. Use a canvas size of 400x300 pixels.
+1. Use a canvas size of 800x600 pixels.
 2. Start with a white background rectangle covering the entire canvas.
 3. For each bullet point in the diagram description:
    - Parse coordinates and shapes precisely.
