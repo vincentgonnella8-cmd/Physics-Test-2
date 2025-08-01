@@ -58,7 +58,7 @@ You are an AP Physics C expert.
    - Avoid using or referencing any language or phrases from the question text.
    - List each diagram element as a bullet point with explicit coordinates and sizes.
 
-   Example bullet points: {
+   Example bullet points: [
      * Use a <polygon> to draw a right triangle:
         - Base point: (50, 350)
         - Top point of the incline: (150, 150)
@@ -82,7 +82,7 @@ You are an AP Physics C expert.
 
         - Friction Force (F<sub>f</sub>)
             )From (250, 200) to (330, 160) (up the slope)
-       }
+       ]
 
 Format:
 Question:
