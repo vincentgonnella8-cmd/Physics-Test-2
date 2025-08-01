@@ -145,6 +145,7 @@ Instructions:
 5. Use clear Python code with comments.
 6. Return the SVG XML string with `return dw.tostring()`.
 7. Output ONLY the Python function `draw_diagram()`.
+8. Do NOT use any extra text or comments; ONLY put raw SVG code
 '''
     prompt = f"{tutorial}\nDiagram description:\n\"\"\"{diagram_desc}\"\"\""
     messages = [
