@@ -51,6 +51,7 @@ Describe diagrams in strict SVG structure, no physics in diagram descriptions.
    - Use <polygon> for ramps
    - Circles are drawn by specifying the center coordinate (x, y) and the radius.
    - If a circle is on a ramp, align the EDGE of the circle to the ramp
+   - ALL ramps and inclines will go UP and RIGHT; normal force is (very often) PERPENDICULAR to the ground
    - Lines are drawn between two points specified by their start and end coordinates.
    - Arrows are lines with a direction indicated by start and end points.
    - Labels are placed at exact (x, y) coordinates.
