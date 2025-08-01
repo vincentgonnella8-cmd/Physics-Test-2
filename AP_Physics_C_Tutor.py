@@ -54,6 +54,7 @@ def generate_svg_code(diagram_desc):
             "Use marker_end='url(#arrow)' to draw arrows. "
             "At the start of your code, add a brief comment explaining how to use svgwrite to create diagrams, "
             "how to add the background and arrows, and how to use marker_end properly. "
+            "Ensure the Python code you output is complete and syntactically correct. "
             "Do NOT include any explanation or text outside the code block."
         )
     }
@@ -75,45 +76,10 @@ def execute_svg_code(code_block):
         "marker_end=arrow", 'marker_end="url(#arrow)"'
     )
     local_vars = {}
-    exec(code_block_fixed, {"svgwrite": svgwrite}, local_vars)
-    if 'draw_diagram' in local_vars:
-        return local_vars['draw_diagram']()
-    else:
-        raise RuntimeError("No draw_diagram() function found in SVG code.")
-
-st.write("### Enter a physics topic or question prompt")
-
-user_input = st.text_area("Physics question prompt", height=100)
-
-if st.button("Generate Explanation and Diagram"):
-    if not user_input.strip():
-        st.warning("Please enter a prompt!")
-    else:
-        with st.spinner("Generating physics explanation..."):
-            explanation_response = generate_physics_explanation(user_input)
-        
-        st.markdown("### Generated Question, Answer, and Explanation")
-        st.markdown(explanation_response, unsafe_allow_html=True)
-        
-        # Try to extract the actual physics question or a short diagram description from explanation
-        # For simplicity, just extract the Question: ... line or fallback to whole prompt
-        question_match = re.search(r"Question:(.*)", explanation_response)
-        diagram_prompt = question_match.group(1).strip() if question_match else user_input
-
-        with st.spinner("Generating SVG diagram code..."):
-            svg_code_response = generate_svg_code(diagram_prompt)
-
-        if "def draw_diagram" in svg_code_response:
-            try:
-                code_start = svg_code_response.index("def draw_diagram")
-                code_block = svg_code_response[code_start:].strip()
-
-                svg_str = execute_svg_code(code_block)
-                st.image(svg_str)
-                st.success("SVG Diagram rendered successfully!")
-            except Exception as e:
-                st.error(f"Error rendering SVG diagram: {e}")
-                st.text(svg_code_response)
-        else:
-            st.error("SVG code not found in the AI response.")
-            st.text(svg_code_response)
+    try:
+        exec(code_block_fixed, {"svgwrite": svgwrite}, local_vars)
+    except SyntaxError as e:
+        st.error(f"Syntax error in SVG code: {e}")
+        return None
+    except Exception as e:
+        st.error(f"Error exec
