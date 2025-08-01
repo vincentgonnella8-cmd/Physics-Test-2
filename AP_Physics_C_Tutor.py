@@ -38,6 +38,17 @@ def clean_code_block(code: str) -> str:
         code = "\n".join(code.splitlines()[:-1])
     return code.strip()
 
+def fix_marker_end(code: str) -> str:
+    """
+    Replace all instances of marker_end=variable
+    with marker_end="url(#variable)" to fix svgwrite usage.
+    """
+    pattern = r'marker_end\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)'
+    def repl(m):
+        var_name = m.group(1)
+        return f'marker_end="url(#{var_name})"'
+    return re.sub(pattern, repl, code)
+
 def generate_question(topic: str) -> str | None:
     prompt = f"""
 You are an AP Physics C: Mechanics expert preparing students for their exam.
@@ -77,8 +88,76 @@ Do NOT include an explanation here.
         return None
 
 def generate_svg(question_text: str) -> str | None:
+    # Full SVG tutorial prompt added here:
+    tutorial = """
+You are a Python SVG expert using the `svgwrite` library. Here's a detailed guide on how to generate SVG diagrams:
+
+1. Setup Canvas:
+   - Create the drawing with size 400x300 pixels:
+     dw = svgwrite.Drawing(size=("400px", "300px"))
+   - Add a white background rectangle covering the entire canvas:
+     dw.add(dw.rect(insert=(0, 0), size=("100%", "100%"), fill="white"))
+
+2. Markers (Arrowheads):
+   - Define reusable markers for arrows using dw.marker:
+     arrow = dw.marker(insert=(10, 5), size=(10, 10), orient="auto", id="arrow")
+     arrow.add(dw.path(d="M0,0 L10,5 L0,10 L2,5 Z", fill="red"))
+     dw.defs.add(arrow)
+   - To use the marker on a line or path, set marker_end to "url(#arrow)" (a string):
+     line = dw.line(start=(50, 100), end=(150, 100), stroke="black", stroke_width=2, marker_end="url(#arrow)")
+   - Do NOT assign the marker object directly (e.g., marker_end=arrow), as SVG expects a URL string reference.
+
+3. Basic Shapes:
+   - Add lines:
+     dw.add(dw.line(start=(x1, y1), end=(x2, y2), stroke="black", stroke_width=2))
+   - Add circles:
+     dw.add(dw.circle(center=(x, y), r=radius, stroke="black", fill="none"))
+   - Add rectangles:
+     dw.add(dw.rect(insert=(x, y), size=(width, height), fill="none", stroke="black"))
+
+4. Text:
+   - Add labels using dw.text:
+     dw.add(dw.text("Label", insert=(x, y), fill="black", font_size="12px"))
+
+5. Comments:
+   - Add comments in the Python code to explain what each section does.
+
+6. Return the SVG string:
+   - Finish by returning the SVG XML string with:
+     return dw.tostring()
+
+7. Important:
+   - Use only 2D elements.
+   - Use clear and concise code.
+   - Avoid markdown or extra text; output only the Python function draw_diagram().
+
+Example function:
+
+def draw_diagram():
+    import svgwrite
+    dw = svgwrite.Drawing(size=("400px", "300px"))
+    dw.add(dw.rect(insert=(0, 0), size=("100%", "100%"), fill="white"))
+
+    # Define red arrow marker
+    arrow = dw.marker(insert=(10, 5), size=(10, 10), orient="auto", id="arrow")
+    arrow.add(dw.path(d="M0,0 L10,5 L0,10 L2,5 Z", fill="red"))
+    dw.defs.add(arrow)
+
+    # Draw a black line with arrowhead
+    line = dw.line(start=(50, 100), end=(150, 100), stroke="black", stroke_width=2, marker_end="url(#arrow)")
+    dw.add(line)
+
+    # Add label near line
+    dw.add(dw.text("Force", insert=(60, 90), fill="black", font_size="12px"))
+
+    return dw.tostring()
+
+Please strictly follow these instructions when generating the SVG Python code.
+"""
     prompt = f"""
 You are a physics diagram expert.
+
+{tutorial}
 
 Based on the following AP Physics C question, generate a Python function named draw_diagram() using the svgwrite library that creates a 2D SVG diagram illustrating the problem setup.
 
@@ -145,8 +224,7 @@ def execute_svg_code(code: str) -> str | None:
     import svgwrite
 
     code = clean_code_block(code)
-    # Fix common marker syntax if needed
-    code = code.replace("marker_end=arrow", 'marker_end="url(#arrow)"')
+    code = fix_marker_end(code)  # <-- improved marker_end fix
 
     local_vars = {}
     try:
