@@ -44,9 +44,13 @@ Describe diagrams in strict SVG structure, no physics in diagram descriptions.
 
    The SVG canvas size is fixed at 800 pixels wide by 600 pixels high.
    All coordinates must fit within this 800x600 pixel canvas.
+   Try to keep ALL parts of the diagram cleanly in view
 
    Use the following SVG drawing conventions when writing the diagram description:
+   - Coordinates start at the top left of (0,0)
+   - Use <polygon> for ramps
    - Circles are drawn by specifying the center coordinate (x, y) and the radius.
+   - If a circle is on a ramp, align the EDGE of the circle to the ramp
    - Lines are drawn between two points specified by their start and end coordinates.
    - Arrows are lines with a direction indicated by start and end points.
    - Labels are placed at exact (x, y) coordinates.
