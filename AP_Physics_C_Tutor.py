@@ -28,48 +28,6 @@ st.title("AP Physics C Tutor — Question, Diagram & Explanation Generator")
 
 topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):", "Rotational Motion")
 
-def clean_code_block(code: str) -> str:
-    code = code.strip()
-    if code.startswith("```"):
-        code = "\n".join(code.splitlines()[1:])
-    if code.endswith("```"):
-        code = "\n".join(code.splitlines()[:-1])
-    return code.strip()
-
-def render_question_with_latex(question: str):
-    q_match = re.search(r"Question:\s*(.*?)\s*Answer Choices:", question, re.DOTALL)
-    a_match = re.search(r"Answer Choices:\s*(.*?)\s*Correct Answer:", question, re.DOTALL)
-    correct_match = re.search(r"Correct Answer:\s*(\w)", question)
-
-    if q_match:
-        st.markdown("**Question:**")
-        st.markdown(f"$$ {q_match.group(1).strip()} $$", unsafe_allow_html=True)
-
-    if a_match:
-        st.markdown("**Answer Choices:**")
-        choices = a_match.group(1).strip().split("\n")
-        for choice in choices:
-            match = re.match(r"([A-D])\)\s*(.*)", choice)
-            if match:
-                label, content = match.groups()
-                st.markdown(f"**{label})** $$ {content.strip()} $$", unsafe_allow_html=True)
-
-    if correct_match:
-        st.markdown(f"**Correct Answer:** {correct_match.group(1)}")
-
-def render_explanation_with_latex(explanation: str):
-    lines = explanation.strip().split("\n")
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith("$$") and line.endswith("$$"):
-            st.markdown(line, unsafe_allow_html=True)
-        elif any(sym in line for sym in ["\\(", "\\)", "$"]):
-            st.markdown(line, unsafe_allow_html=True)
-        else:
-            st.markdown(line)
-
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
     prompt = f'''
 You are an AP Physics C expert.
@@ -145,9 +103,7 @@ Diagram description:
             "role": "system",
             "content": (
                 "You are an expert AP Physics C tutor. "
-                "Always express math using LaTeX syntax: inline math with \\( ... \\), "
-                "block math with $$ ... $$ for standalone equations. "
-                "Avoid plaintext math (e.g., never 'F = ma', always use \\( F = ma \\)). "
+                "LaTeX formatting is used to write mathematical expressions clearly by enclosing math code within special delimiters. Inline math appears within text using single dollar signs $...$, while displayed equations are centered on their own line using double dollar signs $$...$$ or \[...\]. Common math elements include fractions with \frac{numerator}{denominator}, superscripts using ^ (e.g., x^{2}), subscripts with _ (e.g., a_{n}), and square roots via \sqrt{...}. Summations and integrals use \sum_{lower}^{upper} and \int_{lower}^{upper} respectively. Greek letters and special symbols are written with backslashes (e.g., \alpha, \infty). Curly braces {} group expressions, and special characters like % or $ must be escaped with a backslash (\%, \$) to appear literally. This system allows precise and professional formatting of complex math in text."
                 "Describe diagrams in strict SVG structure, no physics in diagram descriptions."
             ),
         },
@@ -197,9 +153,7 @@ Instructions:
         {
             "role": "system",
             "content": (
-                "You are a precise SVG drawing assistant. "
-                "Write clean, valid svgwrite Python code to match descriptions exactly. "
-                "Avoid any physics reasoning — focus only on shape positions and styles."
+                "LaTeX formatting is used to write mathematical expressions clearly by enclosing math code within special delimiters. Inline math appears within text using single dollar signs $...$, while displayed equations are centered on their own line using double dollar signs $$...$$ or \[...\]. Common math elements include fractions with \frac{numerator}{denominator}, superscripts using ^ (e.g., x^{2}), subscripts with _ (e.g., a_{n}), and square roots via \sqrt{...}. Summations and integrals use \sum_{lower}^{upper} and \int_{lower}^{upper} respectively. Greek letters and special symbols are written with backslashes (e.g., \alpha, \infty). Curly braces {} group expressions, and special characters like % or $ must be escaped with a backslash (\%, \$) to appear literally. This system allows precise and professional formatting of complex math in text."
             )
         },
         {"role": "user", "content": prompt},
@@ -225,8 +179,6 @@ Avoid plaintext math (e.g., never 'F = ma', always use \\( F = ma \\)).
 Describe diagrams in strict SVG structure, no physics in diagram descriptions.
 Given this question, write a detailed explanation using LaTeX formatting.
 
-- Use inline math mode for expressions within text: e.g., \\( F = ma \\)
-- Use block math mode for standalone equations: e.g., $$ E = mc^2 $$
 
 Question:
 """{question_text}"""
@@ -235,10 +187,7 @@ Question:
         {
             "role": "system",
             "content": (
-                "You are a master-level AP Physics tutor. "
-                "Always use LaTeX to express equations and units. "
-                "Use \\( ... \\) for inline math and $$ ... $$ for block math. "
-                "Avoid plaintext formatting like 'F = ma' — use \\( F = ma \\) instead."
+                "LaTeX formatting is used to write mathematical expressions clearly by enclosing math code within special delimiters. Inline math appears within text using single dollar signs $...$, while displayed equations are centered on their own line using double dollar signs $$...$$ or \[...\]. Common math elements include fractions with \frac{numerator}{denominator}, superscripts using ^ (e.g., x^{2}), subscripts with _ (e.g., a_{n}), and square roots via \sqrt{...}. Summations and integrals use \sum_{lower}^{upper} and \int_{lower}^{upper} respectively. Greek letters and special symbols are written with backslashes (e.g., \alpha, \infty). Curly braces {} group expressions, and special characters like % or $ must be escaped with a backslash (\%, \$) to appear literally. This system allows precise and professional formatting of complex math in text."
             ),
         },
         {"role": "user", "content": prompt},
