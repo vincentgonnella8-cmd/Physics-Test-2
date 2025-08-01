@@ -28,6 +28,20 @@ st.title("AP Physics C Tutor — Question, Diagram & Explanation Generator")
 
 topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):", "Rotational Motion")
 
+def clean_code_block(code: str) -> str:
+    """Strips triple backticks from code blocks."""
+    code = re.sub(r"^```(?:python)?", "", code.strip(), flags=re.MULTILINE)
+    code = re.sub(r"```$", "", code.strip(), flags=re.MULTILINE)
+    return code.strip()
+
+def render_question_with_latex(question_text: str):
+    """Renders question text with LaTeX."""
+    st.markdown(question_text, unsafe_allow_html=True)
+
+def render_explanation_with_latex(explanation: str):
+    """Renders explanation text with LaTeX."""
+    st.markdown(explanation, unsafe_allow_html=True)
+
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
     prompt = f'''
 You are an AP Physics C expert.
