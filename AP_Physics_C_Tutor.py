@@ -135,7 +135,9 @@ Diagram description:
 def generate_svg_code(diagram_desc: str) -> str | None:
     tutorial = '''
 You are a Python SVG expert using the svgwrite library.
-Always express math using LaTeX syntax.
+Always express math using LaTeX syntax: inline math with $ ... $,
+block math with $$ ... $$ for standalone equations. 
+Avoid plaintext math (e.g., never 'F = ma', always use $ F = ma $. 
 Generate SVG diagrams based exactly on the provided detailed diagram description with pixel coordinates.
 
 Instructions:
