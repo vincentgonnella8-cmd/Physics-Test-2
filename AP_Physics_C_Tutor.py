@@ -55,6 +55,36 @@ Describe diagrams in strict SVG structure, no physics in diagram descriptions.
    - Avoid using language from the question text.
    - List each diagram element as a bullet point with coordinates and sizes.
 
+    THE FOLLOWING IS AN EXAMPLE OF FORMATTING THE DIAGRAM DESCRIPTION, REFER TO THIS IF THE FORMATTING IS OFF [
+        1. Use a <polygon> to draw a right triangle:
+            * Base point: (50, 350)
+            * Top point of the incline: (150, 150)
+            * Right base: (550, 350)
+        2. Use a <circle> centered at (250, 200) with a radius of 40.
+        3. Use <line> elements with arrowheads:
+                * Gravity (F<sub>g</sub>)
+                    - From (250, 200) to (250, 280) (straight down)
+                * Push Component (F<sub>p</sub>)
+                    - From (250, 200) to (310, 260) (diagonal down-right)
+                * Pull Component (F - pull)
+                    - From (250, 200) to (190, 240) (diagonal up-left)
+                * Reaction Force (F<sub>r</sub>)
+                    - From (250, 200) to (220, 110) (diagonal upward, perpendicular to incline)
+                * Friction Force (F<sub>f</sub>)
+                    - From (250, 200) to (330, 160) (up the slope)
+         4. Use <text> elements near the endpoints of each line.
+                * E.g., place F_g - gravity at (260, 270)
+                * Use font-style="italic" and matching colors for clarity
+         5. Use a <path> element to draw a circular arc at the base of the slope:
+                    - Start at (60, 350), end at (80, 330)
+                * Fill it light pink and label it with α using <text>
+         6. Use a <defs> block and a <marker> with a triangle shape to define arrows:
+                     <marker id="arrow" ...>
+                         <path d="M0,0 L0,6 L9,3 z" fill="inherit"/>
+                     </marker>
+                * Add marker-end="url(#arrow)" to each <line>
+    ]
+
 Format:
 Question:
 [question]
