@@ -242,7 +242,6 @@ if st.button("Generate Question, Diagram & Explanation"):
         st.warning("Please enter a physics topic!")
         st.stop()
 
-    # Generate question and diagram description
     with st.spinner("Generating AP Physics C question and diagram description..."):
         raw_question, diagram_description = generate_question_and_diagram_desc(topic)
 
@@ -250,14 +249,12 @@ if st.button("Generate Question, Diagram & Explanation"):
         st.error("Failed to generate question or diagram description.")
         st.stop()
 
-    # Show question + diagram description (for testing)
     st.markdown("### Generated Question")
     st.markdown(raw_question, unsafe_allow_html=True)  # LaTeX enabled
 
     st.markdown("### Diagram Description (for testing, can hide later)")
     st.text(diagram_description)
 
-    # Generate SVG code from diagram description
     with st.spinner("Generating SVG diagram..."):
         svg_code = generate_svg(diagram_description)
 
@@ -269,17 +266,31 @@ if st.button("Generate Question, Diagram & Explanation"):
     st.code(svg_code, language="python")
 
     svg_str = execute_svg_code(svg_code)
+
+    scale_factor = 0.7  # Adjust scale here as needed
+
     if svg_str:
         st.subheader("Diagram")
-        st.components.v1.html(
-            f"""<div style="border:1px solid #ccc; max-width:420px;">{svg_str}</div>""",
-            height=320,
-        )
+
+        # Wrap the SVG in a div applying CSS scale transform
+        scaled_html = f"""
+        <div style="
+            border: 1px solid #ccc;
+            max-width: 420px;
+            overflow: visible;
+            transform: scale({scale_factor});
+            transform-origin: top left;
+            margin-bottom: {int(320 * (1 - scale_factor))}px;
+        ">
+            {svg_str}
+        </div>
+        """
+
+        st.components.v1.html(scaled_html, height=int(320 * scale_factor * 1.2))
     else:
         st.warning("SVG diagram could not be rendered due to errors.")
         st.stop()
 
-    # Generate explanation
     with st.spinner("Generating detailed explanation..."):
         explanation = generate_explanation(raw_question)
 
