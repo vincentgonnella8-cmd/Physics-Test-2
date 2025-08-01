@@ -86,8 +86,16 @@ if prompt := st.chat_input("What can I help you with?"):
                 explanation = full_response.split("Explanation:")[1].split("SVG_Code:")[0].strip()
                 code_block = full_response.split("```python")[1].split("```")[0].strip()
 
+                # --- Post-process the code to fix marker_end issues ---
+                # Replace any non-string marker_end references with correct string format
+                code_block_fixed = code_block.replace(
+                    'marker_end=arrow', 'marker_end="url(#arrow)"'
+                ).replace(
+                    "marker_end=arrow", 'marker_end="url(#arrow)"'
+                )
+
                 local_vars = {}
-                exec(code_block, {"svgwrite": svgwrite}, local_vars)
+                exec(code_block_fixed, {"svgwrite": svgwrite}, local_vars)
 
                 if 'draw_diagram' in local_vars:
                     svg_str = local_vars['draw_diagram']()
@@ -106,4 +114,3 @@ if prompt := st.chat_input("What can I help you with?"):
         else:
             st.markdown(full_response, unsafe_allow_html=True)
             st.session_state['messages'].append({"role": "assistant", "content": full_response})
-        
