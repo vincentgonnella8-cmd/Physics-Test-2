@@ -48,19 +48,24 @@ def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | No
     prompt = f'''
 You are an AP Physics C expert.
 
-Generate ONE original multiple-choice question on "{topic}" using clear LaTeX formatting for all formulas.
+1. Generate ONE original multiple-choice physics question on the topic "{topic}".
+   Use clear LaTeX formatting for all formulas.
+   Provide the question and answer choices only.
 
-Then provide a detailed diagram description for the problem that includes:
-- Exact pixel coordinates for all shapes, lines, arrows, and labels.
-- The size (e.g., radius of circles), orientation, and any colors.
-- Spatial relations and positions relative to each other.
-- Use simple bullet points with coordinates like (x, y).
-- Example: "Draw a ramp line from (50, 250) to (350, 150)."
-- Example: "Draw a solid disk (circle) at center (150, 200) with radius 40 pixels."
-- Example: "Draw an arrow from (150, 200) pointing down the ramp, length about 50 pixels, labeled 'F_gravity'."
-- Example: "Place label 'θ' near (70, 260)."
+2. Next, create a detailed, precise diagram description intended for generating an SVG image.
+   The description must:
+   - Use only exact pixel coordinates (x, y) for all diagram elements.
+   - Specify shapes (lines, circles, arrows, labels) with size and orientation.
+   - Use explicit instructions suitable for SVG rendering (e.g., "Draw a line from (x1,y1) to (x2,y2)").
+   - Avoid using or referencing any language or phrases from the question text.
+   - List each diagram element as a bullet point.
+   - Example bullet points:
+     * Draw a ramp line from (50, 250) to (350, 150).
+     * Draw a solid circle centered at (150, 200) with radius 40 pixels.
+     * Draw an arrow from (150, 200) down the ramp, length 50 pixels, labeled 'F_gravity'.
+     * Place label 'θ' near (70, 260).
 
-Format your response exactly as:
+Format your response exactly as follows:
 
 Question:
 [question text]
@@ -76,12 +81,14 @@ Correct Answer: [Letter]
 Diagram description:
 - [list diagram elements as bullet points with pixel coordinates]
 
-Do NOT include any SVG or code, only textual description.
+Do NOT include any SVG code or programming code.
+Do NOT reuse any text from the question in the diagram description.
+The diagram description should be clear and precise for an SVG renderer to follow.
 '''
     messages = [
         {
             "role": "system",
-            "content": "Generate rigorous AP Physics questions with LaTeX, and detailed diagram descriptions with exact pixel coordinates.",
+            "content": "Generate rigorous AP Physics questions with LaTeX and precise SVG-style diagram descriptions with pixel coordinates.",
         },
         {"role": "user", "content": prompt},
     ]
