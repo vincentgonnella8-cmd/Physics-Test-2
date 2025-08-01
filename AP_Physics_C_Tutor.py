@@ -1,6 +1,7 @@
 import streamlit as st
 import re
 from openai import OpenAI
+import svgwrite  # Moved import here since it's used below
 
 # --- Load API key from Streamlit secrets ---
 API_KEY = st.secrets.get("OPENAI_API_KEY")
@@ -19,15 +20,19 @@ MODEL_NAME = "gpt-4o-mini"
 # Sidebar controls for tuning generation
 st.sidebar.title("Model Parameters")
 temp_question = st.sidebar.slider("Question Temperature", 0.0, 1.0, 0.7, 0.1)
-max_tokens_question = st.sidebar.slider("Question Max Tokens", 200, 1000, 600, 10)
+max_tokens_question = st.sidebar.slider("Question Max Tokens", 200, 1200, 700, 10)
 temp_svg = st.sidebar.slider("SVG Temperature", 0.0, 1.0, 0.3, 0.1)
-max_tokens_svg = st.sidebar.slider("SVG Max Tokens", 100, 1024, 512)
+max_tokens_svg = st.sidebar.slider("SVG Max Tokens", 200, 1024, 600)
 temp_explanation = st.sidebar.slider("Explanation Temperature", 0.0, 2.0, 0.8, 0.1)
 max_tokens_explanation = st.sidebar.slider("Explanation Max Tokens", 500, 2048, 1400, 10)
 
 st.title("AP Physics C Tutor — Question, Diagram & Explanation Generator")
 
-topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):", "Rotational Motion")
+topic = st.text_input(
+    "Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):",
+    "Rotational Motion"
+)
+
 
 def clean_code_block(code: str) -> str:
     """Remove markdown fences if any."""
@@ -38,19 +43,22 @@ def clean_code_block(code: str) -> str:
         code = "\n".join(code.splitlines()[:-1])
     return code.strip()
 
+
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
     prompt = f'''
 You are an AP Physics C expert.
 
-Instructions for question generation:
-- Use LaTeX formatting for all physics formulas (enclose inline math with $...$ and display math with $$...$$).
-- Provide a clear, concise, rigorous multiple-choice question on "{topic}".
-- Label answer choices A) through D).
-- Do NOT include explanations or extra commentary.
-- Use proper physics notation and terminology.
+Generate ONE original multiple-choice question on "{topic}" using clear LaTeX formatting for all formulas.
 
-After the question, provide a detailed textual description of the diagram illustrating the problem setup.
-This description should specify key elements, shapes, arrows, labels, and spatial relations.
+Then provide a detailed diagram description for the problem that includes:
+- Exact pixel coordinates for all shapes, lines, arrows, and labels.
+- The size (e.g., radius of circles), orientation, and any colors.
+- Spatial relations and positions relative to each other.
+- Use simple bullet points with coordinates like (x, y).
+- Example: "Draw a ramp line from (50, 250) to (350, 150)."
+- Example: "Draw a solid disk (circle) at center (150, 200) with radius 40 pixels."
+- Example: "Draw an arrow from (150, 200) pointing down the ramp, length about 50 pixels, labeled 'F_gravity'."
+- Example: "Place label 'θ' near (70, 260)."
 
 Format your response exactly as:
 
@@ -66,21 +74,26 @@ D) ...
 Correct Answer: [Letter]
 
 Diagram description:
-[Detailed textual description of the diagram]
+- [list diagram elements as bullet points with pixel coordinates]
+
+Do NOT include any SVG or code, only textual description.
 '''
     messages = [
-        {"role": "system", "content": "Generate rigorous AP Physics questions with LaTeX, and detailed diagram descriptions."},
-        {"role": "user", "content": prompt}
+        {
+            "role": "system",
+            "content": "Generate rigorous AP Physics questions with LaTeX, and detailed diagram descriptions with exact pixel coordinates.",
+        },
+        {"role": "user", "content": prompt},
     ]
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=messages,
             temperature=temp_question,
-            max_tokens=max_tokens_question + 300  # extra tokens for diagram desc
+            max_tokens=max_tokens_question + 400,  # extra tokens for diagram desc
         )
         full_text = response.choices[0].message.content.strip()
-        
+
         # Parse question and diagram description
         parts = full_text.split("Diagram description:")
         question_text = parts[0].strip()
@@ -90,58 +103,45 @@ Diagram description:
         st.error(f"OpenAI API call failed (generate_question_and_diagram_desc): {e}")
         return None, None
 
+
 def generate_svg(diagram_desc: str) -> str | None:
     tutorial = '''
 You are a Python SVG expert using the svgwrite library.
 
-Here is a detailed guide on how to generate SVG diagrams:
+Generate SVG diagrams based exactly on the provided detailed diagram description with pixel coordinates.
 
-1. Setup Canvas:
-   - Create the drawing with size 400x300 pixels:
-     dw = svgwrite.Drawing(size=("400px", "300px"))
-   - Add a white background rectangle covering the entire canvas:
-     dw.add(dw.rect(insert=(0, 0), size=("100%", "100%"), fill="white"))
+Instructions:
+1. Use a canvas size of 400x300 pixels.
+2. Start with a white background rectangle covering the entire canvas.
+3. For each bullet point in the diagram description:
+   - Parse coordinates and shapes precisely.
+   - Draw lines, circles, rectangles, and arrows exactly at specified pixel positions.
+   - Use a red arrow marker with id 'arrow' for arrows.
+   - Label text exactly at the given coordinates.
+4. Do NOT add or change coordinates; follow the description exactly.
+5. Use clear Python code with comments.
+6. Return the SVG XML string with `return dw.tostring()`.
+7. Output ONLY the Python function `draw_diagram()`. No markdown, no extra text.
 
-2. Markers (Arrowheads):
-   - Define reusable markers for arrows using dw.marker:
-     arrow = dw.marker(insert=(10, 5), size=(10, 10), orient="auto", id="arrow")
-     arrow.add(dw.path(d="M0,0 L10,5 L0,10 L2,5 Z", fill="red"))
-     dw.defs.add(arrow)
-   - Use marker_end="url(#arrow)" string on lines, do NOT assign marker objects directly.
-
-3. Basic Shapes:
-   - Lines: dw.line(start=(x1, y1), end=(x2, y2), stroke="black", stroke_width=2)
-   - Circles: dw.circle(center=(x, y), r=radius, stroke="black", fill="none")
-   - Rectangles: dw.rect(insert=(x, y), size=(width, height), fill="none", stroke="black")
-
-4. Text:
-   - Use dw.text("Label", insert=(x, y), fill="black", font_size="12px")
-
-5. Return the SVG string:
-   - Use return dw.tostring()
-
-Please strictly output ONLY the Python function draw_diagram(), no markdown or explanations.
+Example snippet for an arrow line:
+```python
+arrow = dw.marker(insert=(10,5), size=(10,10), orient="auto", id="arrow")
+arrow.add(dw.path(d="M0,0 L10,5 L0,10 L2,5 Z", fill="red"))
+dw.defs.add(arrow)
+line = dw.line(start=(150, 200), end=(200, 150), stroke="black", stroke_width=2, marker_end="url(#arrow)")
+dw.add(line)
 '''
     prompt = f'''
 You are a physics diagram expert.
 
 {tutorial}
 
-Based on the following diagram description, generate a Python function named draw_diagram() using the svgwrite library that creates a 2D SVG diagram illustrating the problem setup.
-
-Requirements:
-- Output ONLY the Python function draw_diagram() (no markdown).
-- Canvas size: 400x300 px.
-- White background rectangle.
-- Strictly 2D elements only.
-- Return the SVG XML string via dw.tostring().
-
 Diagram description:
-\"\"\"{diagram_desc}\"\"\"
+"""{diagram_desc}"""
 '''
     messages = [
         {"role": "system", "content": "You generate clean, error-free Python SVG drawing functions."},
-        {"role": "user", "content": prompt}
+        {"role": "user", "content": prompt},
     ]
 
     try:
@@ -149,32 +149,38 @@ Diagram description:
             model=MODEL_NAME,
             messages=messages,
             temperature=temp_svg,
-            max_tokens=max_tokens_svg
+            max_tokens=max_tokens_svg,
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
         st.error(f"OpenAI API call failed (generate_svg): {e}")
         return None
 
+
 def generate_explanation(question_text: str) -> str | None:
     prompt = f'''
 You are an excellent AP Physics C tutor.
 
 Instructions:
-- Write a detailed, step-by-step explanation suitable for AP Physics C students.
-- Use LaTeX formatting for all mathematical formulas and expressions.
-- Refer explicitly to diagram elements like arrows and forces.
-- Use clear physics terminology and explain concepts thoroughly.
-- Format your explanation in readable paragraphs.
+
+Write a detailed, step-by-step explanation suitable for AP Physics C students.
+
+Use LaTeX formatting for all mathematical formulas and expressions.
+
+Refer explicitly to diagram elements like arrows and forces.
+
+Use clear physics terminology and explain concepts thoroughly.
+
+Format your explanation in readable paragraphs.
 
 Given the question below, write a very detailed and thorough explanation suitable for a top AP Classroom solution.
 
 Question:
-\"\"\"{question_text}\"\"\"
+"""{question_text}"""
 '''
     messages = [
         {"role": "system", "content": "You provide clear, detailed AP Physics explanations with LaTeX."},
-        {"role": "user", "content": prompt}
+        {"role": "user", "content": prompt},
     ]
 
     try:
@@ -182,16 +188,15 @@ Question:
             model=MODEL_NAME,
             messages=messages,
             temperature=temp_explanation,
-            max_tokens=max_tokens_explanation
+            max_tokens=max_tokens_explanation,
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
         st.error(f"OpenAI API call failed (generate_explanation): {e}")
         return None
 
-def execute_svg_code(code: str) -> str | None:
-    import svgwrite
 
+def execute_svg_code(code: str) -> str | None:
     code = clean_code_block(code)
     # Fix marker_end syntax if assigned directly to marker object
     code = code.replace("marker_end=arrow", 'marker_end="url(#arrow)"')
@@ -214,6 +219,7 @@ def execute_svg_code(code: str) -> str | None:
         st.error(f"Error running draw_diagram(): {e}")
         return None
 
+
 if st.button("Generate Question, Diagram & Explanation"):
 
     if not topic.strip():
@@ -228,9 +234,12 @@ if st.button("Generate Question, Diagram & Explanation"):
         st.error("Failed to generate question or diagram description.")
         st.stop()
 
-    # Show question AND diagram description together for testing
-    st.markdown("### Generated Question and Diagram Description")
-    st.markdown(f"{raw_question}\n\n---\n\n**Diagram Description:**\n\n{diagram_description}", unsafe_allow_html=True)
+    # Show question + diagram description (for testing)
+    st.markdown("### Generated Question")
+    st.markdown(raw_question, unsafe_allow_html=True)  # LaTeX enabled
+
+    st.markdown("### Diagram Description (for testing, can hide later)")
+    st.text(diagram_description)
 
     # Generate SVG code from diagram description
     with st.spinner("Generating SVG diagram..."):
@@ -246,7 +255,10 @@ if st.button("Generate Question, Diagram & Explanation"):
     svg_str = execute_svg_code(svg_code)
     if svg_str:
         st.subheader("Diagram")
-        st.components.v1.html(f"""<div style="border:1px solid #ccc; max-width:420px;">{svg_str}</div>""", height=320)
+        st.components.v1.html(
+            f"""<div style="border:1px solid #ccc; max-width:420px;">{svg_str}</div>""",
+            height=320,
+        )
     else:
         st.warning("SVG diagram could not be rendered due to errors.")
         st.stop()
@@ -257,6 +269,6 @@ if st.button("Generate Question, Diagram & Explanation"):
 
     if explanation:
         st.markdown("### Detailed Explanation")
-        st.markdown(explanation, unsafe_allow_html=True)
+        st.markdown(explanation, unsafe_allow_html=True)  # LaTeX enabled
     else:
         st.warning("Failed to generate explanation.")
