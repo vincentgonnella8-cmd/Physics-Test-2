@@ -36,6 +36,40 @@ def clean_code_block(code: str) -> str:
         code = "\n".join(code.splitlines()[:-1])
     return code.strip()
 
+def render_question_with_latex(question: str):
+    q_match = re.search(r"Question:\s*(.*?)\s*Answer Choices:", question, re.DOTALL)
+    a_match = re.search(r"Answer Choices:\s*(.*?)\s*Correct Answer:", question, re.DOTALL)
+    correct_match = re.search(r"Correct Answer:\s*(\w)", question)
+
+    if q_match:
+        st.markdown("**Question:**")
+        st.markdown(f"$$ {q_match.group(1).strip()} $$", unsafe_allow_html=True)
+
+    if a_match:
+        st.markdown("**Answer Choices:**")
+        choices = a_match.group(1).strip().split("\n")
+        for choice in choices:
+            match = re.match(r"([A-D])\)\s*(.*)", choice)
+            if match:
+                label, content = match.groups()
+                st.markdown(f"**{label})** $$ {content.strip()} $$", unsafe_allow_html=True)
+
+    if correct_match:
+        st.markdown(f"**Correct Answer:** {correct_match.group(1)}")
+
+def render_explanation_with_latex(explanation: str):
+    lines = explanation.strip().split("\n")
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("$$") and line.endswith("$$"):
+            st.markdown(line, unsafe_allow_html=True)
+        elif any(sym in line for sym in ["\\(", "\\)", "$"]):
+            st.markdown(line, unsafe_allow_html=True)
+        else:
+            st.markdown(line)
+
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
     prompt = f'''
 You are an AP Physics C expert.
@@ -49,40 +83,14 @@ You are an AP Physics C expert.
    All coordinates must fit within this 400x300 pixel canvas.
 
    Use the following SVG drawing conventions when writing the diagram description:
-   - Circles are drawn by specifying the center coordinate (x, y) and the radius. The radius extends outward equally in all directions from the center.
+   - Circles are drawn by specifying the center coordinate (x, y) and the radius.
    - Lines are drawn between two points specified by their start and end coordinates.
-   - Arrows are lines with a direction indicated by start and end points, usually ending with a labeled arrowhead.
-   - Labels are placed at exact (x, y) coordinates and should be clearly associated with the relevant diagram element.
-   - All shapes should be outlines only; do NOT specify any fills.
-   - Assume a white background canvas of 800x600 pixels is already provided by the SVG template; do NOT mention or draw the background.
-   - Avoid using or referencing any language or phrases from the question text.
-   - List each diagram element as a bullet point with explicit coordinates and sizes.
-
-   Example bullet points: [
-     * Use a <polygon> to draw a right triangle:
-        - Base point: (50, 350)
-        - Top point of the incline: (150, 150)
-        - Right base: (550, 350)
-        
-     * Use a <circle> centered at (250, 200) with a radius of 40.
-
-     * Use <line> elements with arrowheads:
-
-        - Gravity (F<sub>g</sub>)
-            )From (250, 200) to (250, 280) (straight down)
-
-        - Push Component (F<sub>p</sub>)
-            )From (250, 200) to (310, 260) (diagonal down-right)
-
-        - Pull Component (F - pull)
-            )From (250, 200) to (190, 240) (diagonal up-left)
-
-        - Reaction Force (F<sub>r</sub>)
-            )From (250, 200) to (220, 110) (diagonal upward, perpendicular to incline)
-
-        - Friction Force (F<sub>f</sub>)
-            )From (250, 200) to (330, 160) (up the slope)
-       ]
+   - Arrows are lines with a direction indicated by start and end points.
+   - Labels are placed at exact (x, y) coordinates.
+   - All shapes should be outlines only.
+   - Assume a white background canvas of 800x600 pixels is already provided.
+   - Avoid using language from the question text.
+   - List each diagram element as a bullet point with coordinates and sizes.
 
 Format:
 Question:
@@ -131,18 +139,13 @@ Instructions:
 2. Start with a white background rectangle covering the entire canvas.
 3. For each bullet point in the diagram description:
    - Parse coordinates and shapes precisely.
-   - Draw lines, circles, rectangles, and arrows exactly at specified pixel positions.
+   - Draw lines, circles, rectangles, and arrows.
    - Use a red arrow marker with id 'arrow' for arrows.
    - Label text exactly at the given coordinates.
-4. Do NOT add or change coordinates; follow the description exactly.
+4. Do NOT change coordinates.
 5. Use clear Python code with comments.
 6. Return the SVG XML string with `return dw.tostring()`.
-7. Output ONLY the Python function `draw_diagram()`. No markdown, no extra text.
-
-Basic SVG behavior:
-- Circles are drawn using the center coordinates and radius.
-- Arrows use marker_end="url(#arrow)" for endings.
-- The canvas base is 800x600 pixels and starts at (0,0).
+7. Output ONLY the Python function `draw_diagram()`.
 '''
     prompt = f"{tutorial}\nDiagram description:\n\"\"\"{diagram_desc}\"\"\""
     messages = [
@@ -164,10 +167,13 @@ Basic SVG behavior:
 def generate_explanation(question_text: str) -> str | None:
     prompt = f'''
 You are an excellent AP Physics C tutor.
-Given this question, write a detailed explanation using LaTeX.
+Given this question, write a detailed explanation using LaTeX formatting.
+
+- Use inline math mode for expressions within text: e.g., \\( F = ma \\)
+- Use block math mode for standalone equations: e.g., $$ E = mc^2 $$
 
 Question:
-\"\"\"{question_text}\"\"\"
+"""{question_text}"""
 '''
     messages = [
         {"role": "system", "content": "Provide clear, detailed AP Physics explanations with LaTeX."},
@@ -212,7 +218,7 @@ if st.button("Generate Question, Diagram & Explanation"):
         st.stop()
 
     st.markdown("### Generated Question")
-    st.markdown(raw_question, unsafe_allow_html=True)
+    render_question_with_latex(raw_question)
 
     st.markdown("### Diagram Description (for testing)")
     st.text(diagram_description)
@@ -231,8 +237,6 @@ if st.button("Generate Question, Diagram & Explanation"):
 
     if svg_str:
         st.subheader("Diagram")
-
-        # SCALE SETTINGS
         scale_factor = 0.6
         scaled_width = int(800 * scale_factor)
         scaled_height = int(600 * scale_factor)
@@ -261,6 +265,6 @@ if st.button("Generate Question, Diagram & Explanation"):
 
     if explanation:
         st.markdown("### Explanation")
-        st.markdown(explanation, unsafe_allow_html=True)
+        render_explanation_with_latex(explanation)
     else:
         st.warning("Explanation generation failed.")
