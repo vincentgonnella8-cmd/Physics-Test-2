@@ -1,56 +1,5 @@
-import streamlit as st
-import re
-from openai import OpenAI
-
-# --- Load API key from Streamlit secrets ---
-API_KEY = st.secrets.get("OPENAI_API_KEY")
-if not API_KEY:
-    st.error("API key not found! Please add OPENAI_API_KEY in Streamlit Secrets.")
-    st.stop()
-
-# Set your GitHub-hosted inference URL here
-BASE_URL = "https://models.github.ai/inference"
-
-# Initialize OpenAI client with custom base_url
-client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-
-MODEL_NAME = "gpt-4o-mini"
-
-# Sidebar controls for tuning generation
-st.sidebar.title("Model Parameters")
-temp_question = st.sidebar.slider("Question Temperature", 0.0, 1.0, 0.7, 0.1)
-max_tokens_question = st.sidebar.slider("Question Max Tokens", 200, 800, 450, 10)
-temp_svg = st.sidebar.slider("SVG Temperature", 0.0, 1.0, 0.3, 0.1)
-max_tokens_svg = st.sidebar.slider("SVG Max Tokens", 100, 1024, 512)
-temp_explanation = st.sidebar.slider("Explanation Temperature", 0.0, 2.0, 0.8, 0.1)
-max_tokens_explanation = st.sidebar.slider("Explanation Max Tokens", 500, 2048, 1400, 10)
-
-st.title("AP Physics C Tutor — Question, Diagram & Explanation Generator")
-
-topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):", "Rotational Motion")
-
-def clean_code_block(code: str) -> str:
-    """Remove markdown fences if any."""
-    code = code.strip()
-    if code.startswith("```"):
-        code = "\n".join(code.splitlines()[1:])
-    if code.endswith("```"):
-        code = "\n".join(code.splitlines()[:-1])
-    return code.strip()
-
-def fix_marker_end(code: str) -> str:
-    """
-    Replace all instances of marker_end=variable
-    with marker_end="url(#variable)" to fix svgwrite usage.
-    """
-    pattern = r'marker_end\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)'
-    def repl(m):
-        var_name = m.group(1)
-        return f'marker_end="url(#{var_name})"'
-    return re.sub(pattern, repl, code)
-
 def generate_question(topic: str) -> str | None:
-    prompt = f"""
+    prompt = f'''
 You are an AP Physics C: Mechanics expert preparing students for their exam.
 
 Instructions:
@@ -74,26 +23,16 @@ C) ...
 D) ...
 
 Correct Answer: [Letter]
-"""
+'''
     messages = [
         {"role": "system", "content": "You generate AP Physics C style questions with clear LaTeX formatting."},
         {"role": "user", "content": prompt}
     ]
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            temperature=temp_question,
-            max_tokens=max_tokens_question
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        st.error(f"OpenAI API call failed (generate_question): {e}")
-        return None
+    # rest of function ...
 
 def generate_svg(question_text: str) -> str | None:
-    tutorial = """
+    tutorial = '''
 You are a Python SVG expert using the `svgwrite` library. Here's a detailed guide on how to generate SVG diagrams:
 
 1. Setup Canvas:
@@ -157,8 +96,8 @@ def draw_diagram():
     return dw.tostring()
 
 Please strictly follow these instructions when generating the SVG Python code.
-"""
-    prompt = f"""
+'''
+    prompt = f'''
 You are a physics diagram expert.
 
 {tutorial}
@@ -168,4 +107,45 @@ Based on the following AP Physics C question, generate a Python function named d
 Requirements:
 - Output ONLY the Python function draw_diagram() (no markdown).
 - Canvas size: 400x300 px.
-- White b
+- White background rectangle.
+- Red arrow marker with id 'arrow' used on at least one line.
+- Clear comments.
+- Strictly 2D elements only.
+- Return the SVG XML string via dw.tostring().
+
+Question:
+\"\"\"{question_text}\"\"\"
+'''
+    messages = [
+        {"role": "system", "content": "You generate clean, error-free Python SVG drawing functions."},
+        {"role": "user", "content": prompt}
+    ]
+
+    # rest of function ...
+
+def generate_explanation(question_text: str) -> str | None:
+    prompt = f'''
+You are an excellent AP Physics C tutor.
+
+Instructions:
+- Write a detailed, step-by-step explanation suitable for AP Physics C students.
+- Use LaTeX formatting for all mathematical formulas and expressions.
+- Refer explicitly to diagram elements like arrows and forces.
+- Use clear physics terminology and explain concepts thoroughly.
+- Format your explanation in readable paragraphs.
+
+Given the question below, write a very detailed and thorough explanation suitable for a top AP Classroom solution.
+
+Include references to diagram elements (e.g., arrows, forces).
+
+Use LaTeX formatting for formulas.
+
+Question:
+\"\"\"{question_text}\"\"\"
+'''
+    messages = [
+        {"role": "system", "content": "You provide clear, detailed AP Physics explanations with LaTeX."},
+        {"role": "user", "content": prompt}
+    ]
+
+    # rest of function ...
