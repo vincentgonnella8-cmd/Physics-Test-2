@@ -46,8 +46,12 @@ Describe diagrams in strict SVG structure, no physics in diagram descriptions.
    All coordinates must fit within this 800x600 pixel canvas.
    Try to keep ALL parts of the diagram cleanly in view
 
-   Use the following SVG drawing conventions when writing the diagram description:
+   Before the other rules, these are the MOST IMPORTANT SVG DESCRIPTION RULES TO FOLLOW:
    - Coordinates start at the top left of (0,0)
+   - any coordinate "above" another would have a LOWER y value than the other (Example: (200, 100) is HIGHER than (200, 200))
+   - any coordinate "below" another would have a HIGHER y value than the other (Example: (200, 200) is LOWER than (200, 100))
+
+   Use the following SVG drawing conventions when writing the diagram description:
    - Use <polygon> for ramps, always making a RIGHT triangle for inclines
    - Circles are drawn by specifying the center coordinate (x, y) and the radius.
    - When deciding where to put a circle on a ramp, use the pythagorean theorem to check if the center position would form a similar triangle, if it does, move the circle up by one radius
