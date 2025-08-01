@@ -29,6 +29,21 @@ st.title("AP Physics C Tutor — Question, Diagram & Explanation Generator")
 
 topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):", "Rotational Motion")
 
+# --- MathJax HTML to load once ---
+MATHJAX_HTML = """
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+"""
+
+st.components.v1.html(MATHJAX_HTML, height=0, width=0)  # Inject MathJax once invisibly
+
 def clean_code_block(code: str) -> str:
     """Remove markdown fences if any."""
     code = code.strip()
