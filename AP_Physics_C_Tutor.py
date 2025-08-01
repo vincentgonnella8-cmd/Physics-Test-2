@@ -243,3 +243,7 @@ if st.button("Generate Question, Diagram & Explanation"):
         height=scaled_height,
         width=scaled_width,
     )
+else:
+    st.warning("SVG rendering failed.")
+    st.stop()
+
