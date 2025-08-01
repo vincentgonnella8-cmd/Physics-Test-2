@@ -45,8 +45,44 @@ You are an AP Physics C expert.
 
 2. Next, create a detailed, precise diagram description intended for generating an SVG image.
 
-   The SVG canvas size is fixed at 800 pixels wide by 600 pixels high.
-   Use bullet points for each diagram element with coordinates.
+   The SVG canvas size is fixed at 400 pixels wide by 300 pixels high.
+   All coordinates must fit within this 400x300 pixel canvas.
+
+   Use the following SVG drawing conventions when writing the diagram description:
+   - Circles are drawn by specifying the center coordinate (x, y) and the radius. The radius extends outward equally in all directions from the center.
+   - Lines are drawn between two points specified by their start and end coordinates.
+   - Arrows are lines with a direction indicated by start and end points, usually ending with a labeled arrowhead.
+   - Labels are placed at exact (x, y) coordinates and should be clearly associated with the relevant diagram element.
+   - All shapes should be outlines only; do NOT specify any fills.
+   - Assume a white background canvas of 800x600 pixels is already provided by the SVG template; do NOT mention or draw the background.
+   - Avoid using or referencing any language or phrases from the question text.
+   - List each diagram element as a bullet point with explicit coordinates and sizes.
+
+   Example bullet points: {
+     * Use a <polygon> to draw a right triangle:
+        - Base point: (50, 350)
+        - Top point of the incline: (150, 150)
+        - Right base: (550, 350)
+        
+     * Use a <circle> centered at (250, 200) with a radius of 40.
+
+     * Use <line> elements with arrowheads:
+
+        - Gravity (F<sub>g</sub>)
+            )From (250, 200) to (250, 280) (straight down)
+
+        - Push Component (F<sub>p</sub>)
+            )From (250, 200) to (310, 260) (diagonal down-right)
+
+        - Pull Component (F - pull)
+            )From (250, 200) to (190, 240) (diagonal up-left)
+
+        - Reaction Force (F<sub>r</sub>)
+            )From (250, 200) to (220, 110) (diagonal upward, perpendicular to incline)
+
+        - Friction Force (F<sub>f</sub>)
+            )From (250, 200) to (330, 160) (up the slope)
+       }
 
 Format:
 Question:
@@ -87,12 +123,26 @@ Diagram description:
 def generate_svg(diagram_desc: str) -> str | None:
     tutorial = '''
 You are a Python SVG expert using the svgwrite library.
-Generate SVG diagrams based on a diagram description.
-- Canvas: 800x600
-- Add a white background rectangle
-- Use red arrow marker with id "arrow"
-- Return `dw.tostring()`
-- Output only the function draw_diagram()
+
+Generate SVG diagrams based exactly on the provided detailed diagram description with pixel coordinates.
+
+Instructions:
+1. Use a canvas size of 800x600 pixels.
+2. Start with a white background rectangle covering the entire canvas.
+3. For each bullet point in the diagram description:
+   - Parse coordinates and shapes precisely.
+   - Draw lines, circles, rectangles, and arrows exactly at specified pixel positions.
+   - Use a red arrow marker with id 'arrow' for arrows.
+   - Label text exactly at the given coordinates.
+4. Do NOT add or change coordinates; follow the description exactly.
+5. Use clear Python code with comments.
+6. Return the SVG XML string with `return dw.tostring()`.
+7. Output ONLY the Python function `draw_diagram()`. No markdown, no extra text.
+
+Basic SVG behavior:
+- Circles are drawn using the center coordinates and radius.
+- Arrows use marker_end="url(#arrow)" for endings.
+- The canvas base is 800x600 pixels and starts at (0,0).
 '''
     prompt = f"{tutorial}\nDiagram description:\n\"\"\"{diagram_desc}\"\"\""
     messages = [
