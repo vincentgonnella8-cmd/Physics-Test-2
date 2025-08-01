@@ -3,7 +3,6 @@ import os
 from openai import OpenAI
 import svgwrite
 
-# Get API key from Streamlit secrets or environment variable fallback
 API_KEY = st.secrets.get("OPENAI_API_KEY")
 
 if not API_KEY:
@@ -20,36 +19,34 @@ client = OpenAI(
 
 st.title('AP Physics C Tutor')
 
-# Initialize message history
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
 
-# Sidebar sliders
 st.sidebar.title('Model Parameters')
 temperature = st.sidebar.slider("Temperature", 0.0, 2.0, 0.7, 0.1)
 max_tokens = st.sidebar.slider('Max Tokens', 1, 4096, 1024)
 
-# Display chat history
 for msg in st.session_state['messages']:
     with st.chat_message(msg['role']):
         st.markdown(msg['content'], unsafe_allow_html=True)
 
-# Chat input
 if prompt := st.chat_input("What can I help you with?"):
     st.session_state['messages'].append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # System message instructing AI how to respond
         system_message = {
             "role": "system",
             "content": (
-                "You are an expert AP Physics C tutor. When asked to generate a problem, "
-                "respond using the exact format below:\n\n"
+                "You are an expert AP Physics C tutor. Your goal is to provide expert-level, thorough, "
+                "and clear explanations for every problem. When asked to generate a problem, respond "
+                "using the exact format below:\n\n"
                 "Question: <the physics question>\n"
                 "Answer: <final numeric or conceptual answer>\n"
-                "Explanation: <step-by-step detailed explanation>\n"
+                "Explanation: <step-by-step detailed explanation using LaTeX formatting for all equations, "
+                "enclosed in $...$ for inline math or $$...$$ for display math>. "
+                "Make sure the explanation is pedagogical and easy to understand for an advanced student.\n"
                 "SVG_Code:\n```python\n"
                 "import svgwrite\n\n"
                 "def draw_diagram():\n"
@@ -64,6 +61,7 @@ if prompt := st.chat_input("What can I help you with?"):
                 "    # Return SVG string\n"
                 "    return dwg.tostring()\n"
                 "```\n"
+                "Use LaTeX for all math expressions in your explanation and question to enhance clarity. "
                 "Do NOT include any extra text outside this format."
             )
         }
@@ -79,7 +77,6 @@ if prompt := st.chat_input("What can I help you with?"):
 
         full_response = response.choices[0].message.content
 
-        # Process the response
         if "SVG_Code:" in full_response and "```python" in full_response:
             try:
                 question = full_response.split("Question:")[1].split("Answer:")[0].strip()
@@ -87,7 +84,6 @@ if prompt := st.chat_input("What can I help you with?"):
                 explanation = full_response.split("Explanation:")[1].split("SVG_Code:")[0].strip()
                 code_block = full_response.split("```python")[1].split("```")[0].strip()
 
-                # Run the svgwrite code safely
                 local_vars = {}
                 exec(code_block, {"svgwrite": svgwrite}, local_vars)
 
@@ -99,7 +95,6 @@ if prompt := st.chat_input("What can I help you with?"):
                     st.markdown(f"**Answer:** {answer}")
                     st.markdown(f"**Explanation:** {explanation}")
 
-                    # Save cleaned assistant response in history (no code shown)
                     clean_msg = f"**Question:** {question}\n\n**Answer:** {answer}\n\n**Explanation:** {explanation}"
                     st.session_state['messages'].append({"role": "assistant", "content": clean_msg})
                 else:
@@ -107,6 +102,5 @@ if prompt := st.chat_input("What can I help you with?"):
             except Exception as e:
                 st.error(f"Diagram rendering error: {e}")
         else:
-            # If format unexpected, just show raw response
             st.markdown(full_response, unsafe_allow_html=True)
             st.session_state['messages'].append({"role": "assistant", "content": full_response})
