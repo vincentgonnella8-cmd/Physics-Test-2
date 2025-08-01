@@ -82,7 +82,16 @@ with tab2:
     topic = st.text_input("Topic (e.g., Newton's Second Law)")
     difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
 
+    if "question_part" not in st.session_state:
+        st.session_state.question_part = None
+    if "answer_part" not in st.session_state:
+        st.session_state.answer_part = None
+    if "show_answer" not in st.session_state:
+        st.session_state.show_answer = False
+
     if st.button("Generate Question"):
+        st.session_state.show_answer = False  # Reset on new question
+
         # System message for focused question generation
         system_msg = {
             "role": "system",
@@ -99,14 +108,15 @@ with tab2:
                 f"Generate an open-ended AP Physics C question on the topic of '{topic}' "
                 f"with {difficulty.lower()} difficulty. Format it like an FRQ from the AP exam. "
                 f"After the question, provide a complete, step-by-step solution with explanations "
-                f"using LaTeX formatting where appropriate."
+                f"using LaTeX formatting where appropriate. Separate the question and solution clearly."
             )
         else:  # Multiple Choice
             user_prompt = (
                 f"Generate a multiple choice AP Physics C question on the topic of '{topic}' "
                 f"with {difficulty.lower()} difficulty. Include exactly 4 choices labeled (A)–(D), "
                 f"with only one correct answer. After the question, clearly indicate the correct answer "
-                f"(e.g., **Correct Answer: (C)**), followed by a detailed explanation using LaTeX."
+                f"(e.g., **Correct Answer: (C)**), then provide a full explanation. Separate the question "
+                f"and answer using a divider like '---' or similar."
             )
 
         response = client.chat.completions.create(
@@ -119,5 +129,30 @@ with tab2:
             max_tokens=max_tokens,
         )
 
-        generated = response.choices[0].message.content
-        st.markdown(generated, unsafe_allow_html=True)
+        full_response = response.choices[0].message.content
+
+        # Try splitting the response at a divider like "---" or "Answer:"
+        if "---" in full_response:
+            parts = full_response.split("---", 1)
+        elif "Answer:" in full_response:
+            parts = full_response.split("Answer:", 1)
+        else:
+            parts = [full_response, ""]
+
+        st.session_state.question_part = parts[0].strip()
+        st.session_state.answer_part = parts[1].strip() if len(parts) > 1 else ""
+    
+    # Show the generated question
+    if st.session_state.question_part:
+        st.markdown("### Question")
+        st.markdown(st.session_state.question_part, unsafe_allow_html=True)
+
+        # Reveal answer button
+        if not st.session_state.show_answer and st.session_state.answer_part:
+            if st.button("Reveal Answer"):
+                st.session_state.show_answer = True
+
+        # Show answer after button is clicked
+        if st.session_state.show_answer and st.session_state.answer_part:
+            st.markdown("### Answer / Explanation")
+            st.markdown(st.session_state.answer_part, unsafe_allow_html=True)
