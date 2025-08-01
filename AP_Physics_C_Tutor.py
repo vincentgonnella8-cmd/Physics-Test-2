@@ -272,28 +272,28 @@ if st.button("Generate Question, Diagram & Explanation"):
     scale_factor = 0.7  # Adjust scale here as needed
 
     if svg_str:
-    st.subheader("Diagram")
+        st.subheader("Diagram")
 
-    # Scale factor (e.g., 0.5 = 50%, 0.75 = 75%)
-    scale_factor = 0.6
+        # Scale factor (e.g., 0.5 = 50%, 0.75 = 75%)
+        scale_factor = 0.6
 
-    # Embed SVG in a scaled HTML container
-    st.components.v1.html(
-        f"""
-        <div style="transform: scale({scale_factor}); 
-                    transform-origin: top left; 
-                    width: {800 * scale_factor}px; 
-                    height: {600 * scale_factor}px; 
-                    border: 1px solid #ccc; 
-                    overflow: hidden;">
-            {svg_str}
-        </div>
-        """,
-        height=int(600 * scale_factor + 20),
-    )
-else:
-    st.warning("SVG diagram could not be rendered due to errors.")
-    st.stop()
+        # Embed SVG in a scaled HTML container
+        st.components.v1.html(
+            f"""
+            <div style="transform: scale({scale_factor}); 
+                        transform-origin: top left; 
+                        width: {800 * scale_factor}px; 
+                        height: {600 * scale_factor}px; 
+                        border: 1px solid #ccc; 
+                        overflow: hidden;">
+                {svg_str}
+            </div>
+            """,
+            height=int(600 * scale_factor + 20),
+        )
+    else:
+        st.warning("SVG diagram could not be rendered due to errors.")
+        st.stop()
 
     with st.spinner("Generating detailed explanation..."):
         explanation = generate_explanation(raw_question)
