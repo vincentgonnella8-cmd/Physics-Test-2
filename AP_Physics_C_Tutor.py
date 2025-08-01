@@ -63,9 +63,10 @@ You are an AP Physics C expert.
    - Arrows are lines with a direction indicated by start and end points, usually ending with a labeled arrowhead.
    - Labels are placed at exact (x, y) coordinates and should be clearly associated with the relevant diagram element.
    - All shapes should be outlines only; do NOT specify any fills.
-   - Assume a white background canvas of 400x300 pixels is already provided by the SVG template; do NOT mention or draw the background.
+   - Assume a white background canvas of 800x600 pixels is already provided by the SVG template; do NOT mention or draw the background.
    - Avoid using or referencing any language or phrases from the question text.
    - List each diagram element as a bullet point with explicit coordinates and sizes.
+   - All coordinates start from the top left (0,0) would be at the very top left of the screen
 
    Example bullet points:
      * Draw a ramp line from (50, 250) to (350, 150).
