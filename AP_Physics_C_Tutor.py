@@ -250,7 +250,7 @@ if st.button("Generate Question, Diagram & Explanation"):
 
     if svg_str:
         st.subheader("Diagram")
-        scale_factor = 0.8
+        scale_factor = 0.6
         scaled_width = int(800 * scale_factor)
         scaled_height = int(600 * scale_factor)
 
