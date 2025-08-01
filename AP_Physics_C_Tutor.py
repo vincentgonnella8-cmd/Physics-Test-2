@@ -38,6 +38,11 @@ def clean_code_block(code: str) -> str:
         code = "\n".join(code.splitlines()[:-1])
     return code.strip()
 
+def render_markdown_with_latex(text: str):
+    # Convert newlines to Markdown line breaks for better formatting
+    text = text.replace('\n', '  \n')
+    st.markdown(text, unsafe_allow_html=True)
+
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
     prompt = f'''
 You are an AP Physics C expert.
@@ -77,7 +82,7 @@ Diagram description:
         full_text = response.choices[0].message.content.strip()
         
         # Parse question and diagram description
-        parts = full_text.split("Diagram description:")
+        parts = re.split(r"\s*Diagram description:\s*", full_text, flags=re.IGNORECASE)
         question_text = parts[0].strip()
         diagram_desc = parts[1].strip() if len(parts) > 1 else ""
         return question_text, diagram_desc
@@ -184,15 +189,6 @@ Question:
         st.error(f"OpenAI API call failed (generate_explanation): {e}")
         return None
 
-def clean_code_block(code: str) -> str:
-    """Remove markdown fences if any."""
-    code = code.strip()
-    if code.startswith("```"):
-        code = "\n".join(code.splitlines()[1:])
-    if code.endswith("```"):
-        code = "\n".join(code.splitlines()[:-1])
-    return code.strip()
-
 def execute_svg_code(code: str) -> str | None:
     import svgwrite
 
@@ -233,7 +229,7 @@ if st.button("Generate Question, Diagram & Explanation"):
         st.stop()
 
     st.markdown("### Generated Question")
-    st.markdown(raw_question, unsafe_allow_html=True)  # LaTeX enabled
+    render_markdown_with_latex(raw_question)
 
     # Generate SVG code from diagram description
     with st.spinner("Generating SVG diagram..."):
@@ -260,6 +256,6 @@ if st.button("Generate Question, Diagram & Explanation"):
 
     if explanation:
         st.markdown("### Detailed Explanation")
-        st.markdown(explanation, unsafe_allow_html=True)  # LaTeX enabled
+        render_markdown_with_latex(explanation)
     else:
         st.warning("Failed to generate explanation.")
