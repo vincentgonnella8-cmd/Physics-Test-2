@@ -53,6 +53,13 @@ def generate_question(topic: str) -> str | None:
     prompt = f"""
 You are an AP Physics C: Mechanics expert preparing students for their exam.
 
+Instructions:
+- Use LaTeX formatting for all physics formulas, enclosed in $...$ or $$...$$.
+- Format your question clearly and concisely.
+- Provide answer choices labeled A) through D).
+- Do NOT include explanations or extra commentary.
+- Use correct physics terminology and symbols.
+
 Generate ONE original, rigorous multiple-choice question on the topic of "{topic}".
 
 Format your response exactly as:
@@ -67,11 +74,9 @@ C) ...
 D) ...
 
 Correct Answer: [Letter]
-
-Do NOT include an explanation here.
 """
     messages = [
-        {"role": "system", "content": "You generate AP Physics C style questions."},
+        {"role": "system", "content": "You generate AP Physics C style questions with clear LaTeX formatting."},
         {"role": "user", "content": prompt}
     ]
 
@@ -88,7 +93,6 @@ Do NOT include an explanation here.
         return None
 
 def generate_svg(question_text: str) -> str | None:
-    # Full SVG tutorial prompt added here:
     tutorial = """
 You are a Python SVG expert using the `svgwrite` library. Here's a detailed guide on how to generate SVG diagrams:
 
@@ -164,135 +168,4 @@ Based on the following AP Physics C question, generate a Python function named d
 Requirements:
 - Output ONLY the Python function draw_diagram() (no markdown).
 - Canvas size: 400x300 px.
-- White background rectangle.
-- Red arrow marker with id 'arrow' used on at least one line.
-- Clear comments.
-- Strictly 2D elements only.
-- Return the SVG XML string via dw.tostring().
-
-Question:
-\"\"\"{question_text}\"\"\"
-"""
-    messages = [
-        {"role": "system", "content": "You generate clean, error-free Python SVG drawing functions."},
-        {"role": "user", "content": prompt}
-    ]
-
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            temperature=temp_svg,
-            max_tokens=max_tokens_svg
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        st.error(f"OpenAI API call failed (generate_svg): {e}")
-        return None
-
-def generate_explanation(question_text: str) -> str | None:
-    prompt = f"""
-You are an excellent AP Physics C tutor.
-
-Given the question below, write a very detailed and thorough explanation suitable for a top AP Classroom solution.
-
-Include references to diagram elements (e.g., arrows, forces).
-
-Use LaTeX formatting for formulas.
-
-Question:
-\"\"\"{question_text}\"\"\"
-"""
-    messages = [
-        {"role": "system", "content": "You provide clear, detailed AP Physics explanations."},
-        {"role": "user", "content": prompt}
-    ]
-
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            temperature=temp_explanation,
-            max_tokens=max_tokens_explanation
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        st.error(f"OpenAI API call failed (generate_explanation): {e}")
-        return None
-
-def execute_svg_code(code: str) -> str | None:
-    import svgwrite
-
-    code = clean_code_block(code)
-    code = fix_marker_end(code)  # <-- improved marker_end fix
-
-    local_vars = {}
-    try:
-        exec(code, {"svgwrite": svgwrite}, local_vars)
-    except Exception as e:
-        st.error(f"Error executing SVG code: {e}")
-        return None
-
-    if "draw_diagram" not in local_vars:
-        st.error("draw_diagram() function not found in SVG code.")
-        return None
-
-    try:
-        svg_str = local_vars["draw_diagram"]()
-        return svg_str
-    except Exception as e:
-        st.error(f"Error running draw_diagram(): {e}")
-        return None
-
-def extract_question_text(raw_question: str) -> str:
-    match = re.search(r"Question:(.*?)(?:Answer Choices:|Correct Answer:|$)", raw_question, re.DOTALL | re.IGNORECASE)
-    if match:
-        return match.group(1).strip()
-    return raw_question.strip()
-
-if st.button("Generate Question, Diagram & Explanation"):
-
-    if not topic.strip():
-        st.warning("Please enter a physics topic!")
-        st.stop()
-
-    # Generate question
-    with st.spinner("Generating AP Physics C question..."):
-        raw_question = generate_question(topic)
-
-    if not raw_question:
-        st.stop()
-
-    st.markdown("### Generated Question")
-    st.markdown(raw_question)
-
-    question_text = extract_question_text(raw_question)
-
-    # Generate SVG
-    with st.spinner("Generating SVG diagram..."):
-        svg_code = generate_svg(question_text)
-
-    if not svg_code:
-        st.warning("Failed to generate SVG code.")
-        st.stop()
-
-    st.subheader("Generated SVG Python Code")
-    st.code(svg_code, language="python")
-
-    svg_str = execute_svg_code(svg_code)
-    if svg_str:
-        st.subheader("Diagram")
-        st.components.v1.html(f"""<div style="border:1px solid #ccc; max-width:420px;">{svg_str}</div>""", height=320)
-    else:
-        st.warning("SVG diagram could not be rendered due to errors.")
-        st.stop()
-
-    # Generate explanation
-    with st.spinner("Generating detailed explanation..."):
-        explanation = generate_explanation(raw_question)
-
-    if explanation:
-        st.markdown("### Detailed Explanation")
-        st.markdown(explanation, unsafe_allow_html=True)
-    else:
-        st.warning("Failed to generate explanation.")
+- White b
