@@ -10,10 +10,9 @@ if not API_KEY:
     st.error("API key not found! Please add OPENAI_API_KEY in Streamlit Secrets.")
     st.stop()
 
-# Set your GitHub-hosted inference URL here
-BASE_URL = "https://models.github.ai/inference"
-client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-MODEL_NAME = "gpt-4o-mini"
+# OpenAI client (no base_url unless using a proxy)
+client = OpenAI(api_key=API_KEY)
+MODEL_NAME = "gpt-4o"
 
 # Sidebar controls
 st.sidebar.title("Model Parameters")
@@ -28,23 +27,8 @@ st.title("AP Physics C Tutor — Question, Diagram & Explanation Generator")
 
 topic = st.text_input("Enter the Physics Topic (e.g. Rotational Motion, Energy Conservation):", "Rotational Motion")
 
-def clean_code_block(code: str) -> str:
-    """Strips triple backticks from code blocks."""
-    code = re.sub(r"^```(?:python)?", "", code.strip(), flags=re.MULTILINE)
-    code = re.sub(r"```$", "", code.strip(), flags=re.MULTILINE)
-    return code.strip()
-
-def render_question_with_latex(question_text: str):
-    """Renders question text with LaTeX."""
-    st.markdown(question_text, unsafe_allow_html=True)
-
-def render_explanation_with_latex(explanation: str):
-    """Renders explanation text with LaTeX."""
-    st.markdown(explanation, unsafe_allow_html=True)
-
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
-    prompt = f'''
-You are an AP Physics C expert.
+    prompt = f'''You are an AP Physics C expert.
 Always express math using LaTeX syntax: inline math with \\( ... \\),
 block math with $$ ... $$ for standalone equations. 
 Avoid plaintext math (e.g., never 'F = ma', always use \\( F = ma \\)). 
@@ -112,15 +96,12 @@ Diagram description:
 - Draw ...
 - Draw ...
 '''
+
     messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are an expert AP Physics C tutor. "
+        {"role": "system", "content": ("You are an expert AP Physics C tutor. "
                 "LaTeX formatting is used to write mathematical expressions clearly by enclosing math code within special delimiters. Inline math appears within text using single dollar signs $...$, while displayed equations are centered on their own line using double dollar signs $$...$$ or \[...\]. Common math elements include fractions with \frac{numerator}{denominator}, superscripts using ^ (e.g., x^{2}), subscripts with _ (e.g., a_{n}), and square roots via \sqrt{...}. Summations and integrals use \sum_{lower}^{upper} and \int_{lower}^{upper} respectively. Greek letters and special symbols are written with backslashes (e.g., \alpha, \infty). Curly braces {} group expressions, and special characters like % or $ must be escaped with a backslash (\%, \$) to appear literally. This system allows precise and professional formatting of complex math in text."
-                "Describe diagrams in strict SVG structure, no physics in diagram descriptions."
-            ),
-        },
+                "Describe diagrams in strict SVG structure, no physics in diagram descriptions."),
+	},  
         {"role": "user", "content": prompt},
     ]
     try:
@@ -219,7 +200,8 @@ Question:
         return None
 
 def execute_svg_code(code: str) -> str | None:
-    code = clean_code_block(code)
+    code = re.sub(r"^```(?:python)?", "", code.strip(), flags=re.MULTILINE)
+    code = re.sub(r"```$", "", code.strip(), flags=re.MULTILINE)
     code = code.replace("marker_end=arrow", 'marker_end="url(#arrow)"')
     local_vars = {}
     try:
@@ -245,7 +227,7 @@ if st.button("Generate Question, Diagram & Explanation"):
         st.stop()
 
     st.markdown("### Generated Question")
-    render_question_with_latex(raw_question)
+    st.markdown(raw_question, unsafe_allow_html=True)
 
     st.markdown("### Diagram Description (for testing)")
     st.text(diagram_description)
@@ -292,6 +274,6 @@ if st.button("Generate Question, Diagram & Explanation"):
 
     if explanation:
         st.markdown("### Explanation")
-        render_explanation_with_latex(explanation)
+        st.markdown(explanation, unsafe_allow_html=True)
     else:
         st.warning("Explanation generation failed.")
