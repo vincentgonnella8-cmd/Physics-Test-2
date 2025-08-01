@@ -53,15 +53,21 @@ You are an AP Physics C expert.
    Provide the question and answer choices only.
 
 2. Next, create a detailed, precise diagram description intended for generating an SVG image.
+
+   The SVG canvas size is fixed at 400 pixels wide by 300 pixels high.
+   All coordinates must fit within this 400x300 pixel canvas.
+
    The description must:
    - Use only exact pixel coordinates (x, y) for all diagram elements.
    - Specify shapes (lines, circles, arrows, labels) with size and orientation.
    - Use explicit instructions suitable for SVG rendering (e.g., "Draw a line from (x1,y1) to (x2,y2)").
+   - Do NOT specify any fills for circles or shapes; all shapes should be outlines only.
+   - Assume a white background canvas of 400x300 pixels is already provided by the SVG template; do NOT mention or draw the background.
    - Avoid using or referencing any language or phrases from the question text.
    - List each diagram element as a bullet point.
    - Example bullet points:
      * Draw a ramp line from (50, 250) to (350, 150).
-     * Draw a solid circle centered at (150, 200) with radius 40 pixels.
+     * Draw a circle outline centered at (150, 200) with radius 40 pixels (no fill).
      * Draw an arrow from (150, 200) down the ramp, length 50 pixels, labeled 'F_gravity'.
      * Place label 'θ' near (70, 260).
 
