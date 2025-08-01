@@ -5,14 +5,8 @@ import svgwrite
 import streamlit.components.v1 as components
 
 # --- Load API key from Streamlit secrets ---
-API_KEY = st.secrets.get("OPENAI_API_KEY")
-if not API_KEY:
-    st.error("API key not found! Please add OPENAI_API_KEY in Streamlit Secrets.")
-    st.stop()
-
-# OpenAI client (no base_url unless using a proxy)
-client = OpenAI(api_key=API_KEY)
-MODEL_NAME = "gpt-4o"
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+MODEL_NAME = "gpt-4"
 
 # Sidebar controls
 st.sidebar.title("Model Parameters")
