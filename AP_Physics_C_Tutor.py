@@ -222,28 +222,28 @@ if st.button("Generate Question, Diagram & Explanation"):
     svg_str = execute_svg_code(svg_code)
 
     if svg_str:
-    st.subheader("Rendered Diagram")
-    scale_factor = 0.8
-    scaled_width = int(800 * scale_factor)
-    scaled_height = int(600 * scale_factor)
+        st.subheader("Rendered Diagram")
+        scale_factor = 0.8
+        scaled_width = int(800 * scale_factor)
+        scaled_height = int(600 * scale_factor)
 
-    components.html(
-        f"""
-        <div style="
-            width: {scaled_width}px;
-            height: {scaled_height}px;
-            overflow: hidden;
-            border: 1px solid #ccc;
-            transform: scale({scale_factor});
-            transform-origin: top left;
-        ">
-            {svg_str}
-        </div>
-        """,
-        height=scaled_height,
-        width=scaled_width,
-    )
-else:
-    st.warning("SVG rendering failed.")
-    st.stop()
+        components.html(
+            f"""
+            <div style="
+                width: {scaled_width}px;
+                height: {scaled_height}px;
+                overflow: hidden;
+                border: 1px solid #ccc;
+                transform: scale({scale_factor});
+                transform-origin: top left;
+            ">
+                {svg_str}
+            </div>
+            """,
+            height=scaled_height,
+            width=scaled_width,
+        )
+    else:
+        st.warning("SVG rendering failed.")
+        st.stop()
 
