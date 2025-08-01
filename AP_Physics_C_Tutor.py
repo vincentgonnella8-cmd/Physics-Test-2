@@ -28,8 +28,9 @@ def generate_physics_explanation(user_prompt):
         "content": (
             "You are an expert AP Physics C tutor. Given the user's prompt, generate a physics question, "
             "the final answer, and a detailed, step-by-step explanation with rigorous LaTeX formatting. "
-            "At the start, include a brief explanation on how to use LaTeX for math formatting "
-            "(inline math with $...$ and display math with $$...$$). "
+            "Start your response with a brief explanation on how to use LaTeX math formatting in the text, "
+            "specifically: inline math should be enclosed in $...$ and display math in $$...$$. "
+            "ALWAYS use LaTeX for any math expressions or formulas. "
             "Do NOT include any SVG code or diagram instructions."
         )
     }
@@ -49,12 +50,12 @@ def generate_svg_code(diagram_desc):
         "role": "system",
         "content": (
             "You are an expert at generating physics diagrams in Python using svgwrite. "
-            "Generate ONLY the function draw_diagram() that returns an SVG string. "
-            "Include a white background rectangle filling the canvas and define a red arrow marker with id 'arrow'. "
-            "Use marker_end='url(#arrow)' to draw arrows. "
-            "At the start of your code, add a brief comment explaining how to use svgwrite to create diagrams, "
-            "how to add the background and arrows, and how to use marker_end properly. "
-            "Ensure the Python code you output is complete and syntactically correct. "
+            "Generate ONLY a complete function named draw_diagram() that returns the SVG string. "
+            "Include a white background rectangle that fills the entire SVG canvas. "
+            "Define a red arrow marker with id 'arrow' in defs and use marker_end='url(#arrow)' properly. "
+            "At the start of your function code, add a brief Python comment explaining how svgwrite is used, "
+            "how the background rectangle is added, and how arrows with marker_end work. "
+            "Ensure the Python code you output is syntactically correct, complete, and runnable. "
             "Do NOT include any explanation or text outside the code block."
         )
     }
@@ -70,17 +71,24 @@ def generate_svg_code(diagram_desc):
     return response.choices[0].message.content
 
 def execute_svg_code(code_block):
+    # Fix common marker_end misuse
     code_block_fixed = code_block.replace(
         'marker_end=arrow', 'marker_end="url(#arrow)"'
     ).replace(
         "marker_end=arrow", 'marker_end="url(#arrow)"'
     )
+    # Optional: fix other common issues here if you want
+
+    # Compile check before exec
+    try:
+        compile(code_block_fixed, "<string>", "exec")
+    except SyntaxError as e:
+        st.error(f"Syntax error detected in SVG code: {e}")
+        return None
+
     local_vars = {}
     try:
         exec(code_block_fixed, {"svgwrite": svgwrite}, local_vars)
-    except SyntaxError as e:
-        st.error(f"Syntax error in SVG code: {e}")
-        return None
     except Exception as e:
         st.error(f"Error executing SVG code: {e}")
         return None
@@ -93,7 +101,7 @@ def execute_svg_code(code_block):
 
 st.write("### Enter a physics topic or question prompt")
 
-user_input = st.text_area("Physics question prompt", height=100)
+user_input = st.text_area("Physics question prompt", height=120)
 
 if st.button("Generate Explanation and Diagram"):
     if not user_input.strip():
@@ -105,7 +113,8 @@ if st.button("Generate Explanation and Diagram"):
         st.markdown("### Generated Question, Answer, and Explanation")
         st.markdown(explanation_response, unsafe_allow_html=True)
         
-        question_match = re.search(r"Question:(.*)", explanation_response)
+        # Try to extract a suitable diagram prompt from the explanation:
+        question_match = re.search(r"Question:(.*)", explanation_response, re.IGNORECASE)
         diagram_prompt = question_match.group(1).strip() if question_match else user_input
 
         with st.spinner("Generating SVG diagram code..."):
