@@ -42,24 +42,17 @@ def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | No
     prompt = f'''
 You are an AP Physics C expert.
 
-Instructions for LaTeX formatting:
-- Use LaTeX math mode to write all physics formulas.
-- Use inline math with single dollar signs: $E=mc^2$
-- Use display math with double dollar signs for important equations:
+Instructions for question generation:
+- Use LaTeX formatting for all physics formulas (enclose inline math with $...$ and display math with $$...$$).
+- Provide a clear, concise, rigorous multiple-choice question on "{topic}".
+- Label answer choices A) through D).
+- Do NOT include explanations or extra commentary.
+- Use proper physics notation and terminology.
 
-  $$
-  F = ma
-  $$
+After the question, provide a detailed textual description of the diagram illustrating the problem setup.
+This description should specify key elements, shapes, arrows, labels, and spatial relations.
 
-- Use proper LaTeX syntax for fractions \\frac{{a}}{{b}}, integrals \\int, summations \\sum, Greek letters \\theta, \\alpha, etc.
-- Do NOT write equations in plain text or Unicode; always use LaTeX.
-
-Generate ONE original multiple-choice question on "{topic}", with clear LaTeX formatting.
-
-Then provide a detailed textual description of the diagram illustrating the problem setup.
-This description will be used to generate an SVG diagram.
-
-Format your response as:
+Format your response exactly as:
 
 Question:
 [question text]
@@ -73,7 +66,7 @@ D) ...
 Correct Answer: [Letter]
 
 Diagram description:
-[Describe the key elements, shapes, arrows, labels, and spatial relations of the diagram.]
+[Detailed textual description of the diagram]
 '''
     messages = [
         {"role": "system", "content": "Generate rigorous AP Physics questions with LaTeX, and detailed diagram descriptions."},
@@ -167,24 +160,12 @@ def generate_explanation(question_text: str) -> str | None:
     prompt = f'''
 You are an excellent AP Physics C tutor.
 
-Instructions for LaTeX formatting:
-- Use LaTeX math mode for all formulas.
-- Use inline math with single dollar signs $...$.
-- Use display math with double dollar signs for important equations:
-
-  $$
-  a = \\frac{{F}}{{m}}
-  $$
-
-- Use clear, correct LaTeX syntax for fractions, integrals, summations, Greek letters, superscripts, subscripts, etc.
-
-Write a detailed, step-by-step explanation suitable for AP Physics C students.
-
-Refer explicitly to diagram elements like arrows and forces.
-
-Use clear physics terminology and explain concepts thoroughly.
-
-Format your explanation in readable paragraphs.
+Instructions:
+- Write a detailed, step-by-step explanation suitable for AP Physics C students.
+- Use LaTeX formatting for all mathematical formulas and expressions.
+- Refer explicitly to diagram elements like arrows and forces.
+- Use clear physics terminology and explain concepts thoroughly.
+- Format your explanation in readable paragraphs.
 
 Given the question below, write a very detailed and thorough explanation suitable for a top AP Classroom solution.
 
@@ -247,8 +228,9 @@ if st.button("Generate Question, Diagram & Explanation"):
         st.error("Failed to generate question or diagram description.")
         st.stop()
 
-    st.markdown("### Generated Question")
-    st.markdown(raw_question, unsafe_allow_html=True)  # LaTeX enabled
+    # Show question AND diagram description together for testing
+    st.markdown("### Generated Question and Diagram Description")
+    st.markdown(f"{raw_question}\n\n---\n\n**Diagram Description:**\n\n{diagram_description}", unsafe_allow_html=True)
 
     # Generate SVG code from diagram description
     with st.spinner("Generating SVG diagram..."):
@@ -275,6 +257,6 @@ if st.button("Generate Question, Diagram & Explanation"):
 
     if explanation:
         st.markdown("### Detailed Explanation")
-        st.markdown(explanation, unsafe_allow_html=True)  # LaTeX enabled
+        st.markdown(explanation, unsafe_allow_html=True)
     else:
         st.warning("Failed to generate explanation.")
