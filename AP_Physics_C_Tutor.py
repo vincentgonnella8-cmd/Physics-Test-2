@@ -73,6 +73,11 @@ def render_explanation_with_latex(explanation: str):
 def generate_question_and_diagram_desc(topic: str) -> tuple[str | None, str | None]:
     prompt = f'''
 You are an AP Physics C expert.
+Always express math using LaTeX syntax: inline math with \\( ... \\),
+block math with $$ ... $$ for standalone equations. 
+Avoid plaintext math (e.g., never 'F = ma', always use \\( F = ma \\)). 
+Describe diagrams in strict SVG structure, no physics in diagram descriptions.
+
 1. Generate ONE original multiple-choice physics question on the topic "{topic}".
    Use clear LaTeX formatting for all formulas.
    Provide the question and answer choices only.
@@ -167,6 +172,10 @@ Diagram description:
 def generate_svg(diagram_desc: str) -> str | None:
     tutorial = '''
 You are a Python SVG expert using the svgwrite library.
+Always express math using LaTeX syntax: inline math with \\( ... \\),
+block math with $$ ... $$ for standalone equations. 
+Avoid plaintext math (e.g., never 'F = ma', always use \\( F = ma \\)). 
+Describe diagrams in strict SVG structure, no physics in diagram descriptions.
 
 Generate SVG diagrams based exactly on the provided detailed diagram description with pixel coordinates.
 
@@ -210,6 +219,10 @@ Instructions:
 def generate_explanation(question_text: str) -> str | None:
     prompt = f'''
 You are an excellent AP Physics C tutor.
+Always express math using LaTeX syntax: inline math with \\( ... \\),
+block math with $$ ... $$ for standalone equations. 
+Avoid plaintext math (e.g., never 'F = ma', always use \\( F = ma \\)). 
+Describe diagrams in strict SVG structure, no physics in diagram descriptions.
 Given this question, write a detailed explanation using LaTeX formatting.
 
 - Use inline math mode for expressions within text: e.g., \\( F = ma \\)
