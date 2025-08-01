@@ -58,6 +58,7 @@ You are an AP Physics C expert.
    All coordinates must fit within this 800x600 pixel canvas.
 
    Use the following SVG drawing conventions when writing the diagram description:
+   - Keep EVERYTHING visible in frame, if you cannot keep it within the 800x600 frame, the diagram description should be changed
    - Circles are drawn by specifying the center coordinate (x, y) and the radius. The radius extends outward equally in all directions from the center.
    - Lines are drawn between two points specified by their start and end coordinates.
    - Arrows are lines with a direction indicated by start and end points, usually ending with a labeled arrowhead.
